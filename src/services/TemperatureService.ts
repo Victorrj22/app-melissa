@@ -10,7 +10,7 @@ type RequestOptions = {
   timeoutMs?: number;
 };
 
-export class MelissaService {
+export class TemperatureService {
   private baseUrl: string;
   private defaultTimeoutMs: number;
 
@@ -41,7 +41,7 @@ export class MelissaService {
 
     try {
       const finalUrl = url.toString();
-      console.log('[MelissaService] GET', finalUrl);
+      console.log('[TemperatureService] GET', finalUrl);
       const res = await fetch(finalUrl, {
         ...init,
         headers: { ...headers, ...(init?.headers as any) },
@@ -96,11 +96,11 @@ export class MelissaService {
 
 const DEFAULT_BASE_URL = (() => {
   const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-  const base = 'http://192.168.1.102:5179';
+  const base = 'http://192.168.1.101:5179';
 
   return base;
 })();
 
-export const melissaService = new MelissaService(DEFAULT_BASE_URL);
+export const temperatureService = new TemperatureService(DEFAULT_BASE_URL);
 
-export default melissaService;
+export default temperatureService;

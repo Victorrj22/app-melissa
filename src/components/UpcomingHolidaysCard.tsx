@@ -1,22 +1,30 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+﻿import React from 'react';
+import { StyleSheet, View, Image, TouchableOpacity } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { colors } from '@theme/colors';
-import { formatDate } from '@utils/date';
 
-interface Holiday {
+interface HolidayItem {
   id: string;
   name: string;
-  date: Date;
+  dateText: string;
 }
 
 interface UpcomingHolidaysCardProps {
-  holidays: Holiday[];
+  holidays: HolidayItem[];
+  onOpenCalendar?: () => void;
 }
 
-const UpcomingHolidaysCard: React.FC<UpcomingHolidaysCardProps> = ({ holidays }) => (
+const UpcomingHolidaysCard: React.FC<UpcomingHolidaysCardProps> = ({ holidays, onOpenCalendar }) => (
   <Card style={styles.card}>
-    <Card.Title title="Próximos Feriados" titleStyle={styles.title} />
+    <Card.Title
+      title="Próximos Feriados"
+      titleStyle={styles.title}
+      right={() => (
+        <TouchableOpacity onPress={onOpenCalendar} style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Abrir calendário">
+          <Image source={require('../../assets/calendar_icon.png')} style={styles.icon} />
+        </TouchableOpacity>
+      )}
+    />
     <Card.Content>
       {holidays.map((holiday) => (
         <View key={holiday.id} style={styles.holidayRow}>
@@ -24,7 +32,7 @@ const UpcomingHolidaysCard: React.FC<UpcomingHolidaysCardProps> = ({ holidays })
             {holiday.name}
           </Text>
           <Text variant="labelLarge" style={styles.holidayDate}>
-            {formatDate(holiday.date)}
+            {holiday.dateText}
           </Text>
         </View>
       ))}
@@ -41,6 +49,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary
   },
+  iconButton: {
+    paddingRight: 12,
+    paddingVertical: 4
+  },
+  icon: {
+    width: 22,
+    height: 22,
+    tintColor: colors.primary
+  },
   holidayRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -52,8 +69,7 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   holidayDate: {
-    color: colors.textSecondary,
-    textTransform: 'capitalize'
+    color: colors.textSecondary
   }
 });
 

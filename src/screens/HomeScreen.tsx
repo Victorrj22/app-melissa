@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Divider, Portal, Dialog, List, Button } from 'react-native-paper';
@@ -7,16 +7,18 @@ import WelcomeCard from '@components/WelcomeCard';
 import TemperatureCard from '@components/TemperatureCard';
 import TaskListCard from '@components/TaskListCard';
 import UpcomingHolidaysCard from '@components/UpcomingHolidaysCard';
+import YearCalendarModal from '@components/YearCalendarModal';
+import { getUpcomingHolidays, type UpcomingHolidayItem, getHolidayDateStringsForYear } from '@utils/holidayLoader';
 import BottomNav from '@components/BottomNav';
 import { Task } from '@components/TaskItem';
 import { colors } from '@theme/colors';
-import melissaService from '../services/MelissaService';
+import melissaService from '../services/TemperatureService';
 
 const HomeScreen: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: '1',
-      title: 'Revisar relatórios trimestrais',
+      title: 'Revisar relatÃ³rios trimestrais',
       dueDate: new Date('2025-09-17'),
       completed: false
     },
@@ -27,15 +29,6 @@ const HomeScreen: React.FC = () => {
       completed: true
     }
   ]);
-
-  const holidays = useMemo(
-    () => [
-      { id: '1', name: 'Ano novo', date: new Date('2025-01-01') },
-      { id: '2', name: 'Natal', date: new Date('2025-12-25') }
-    ],
-    []
-  );
-
   const toggleTask = (taskId: string) =>
     setTasks((previous) =>
       previous.map((task) =>
@@ -61,6 +54,23 @@ const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     loadTemperature();
+  }, []);
+
+  const currentYear = new Date().getFullYear();
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [markedDates, setMarkedDates] = useState<string[]>([]);
+  const openCalendar = async () => {
+    const dates = await getHolidayDateStringsForYear(currentYear);
+    setMarkedDates(dates);
+    setCalendarVisible(true);
+  };
+
+  const [holidays, setHolidays] = useState<UpcomingHolidayItem[]>([]);
+  useEffect(() => {
+    (async () => {
+      const nextTwo = await getUpcomingHolidays(2);
+      setHolidays(nextTwo);
+    })();
   }, []);
 
   return (
@@ -112,7 +122,8 @@ const HomeScreen: React.FC = () => {
           onAddTask={() => undefined}
           onManageTasks={() => undefined}
         />
-        <UpcomingHolidaysCard holidays={holidays} />
+        <UpcomingHolidaysCard holidays={holidays} onOpenCalendar={openCalendar} />
+        <YearCalendarModal visible={calendarVisible} onDismiss={() => setCalendarVisible(false)} year={currentYear} markedDates={markedDates} />
       </ScrollView>
       <Divider />
       <BottomNav />
@@ -133,3 +144,14 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
+
+
+
+
+
+
+
+
+
+
+
