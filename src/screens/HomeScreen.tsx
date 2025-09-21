@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Divider } from 'react-native-paper';
+import { Divider, Portal, Dialog, List, Button } from 'react-native-paper';
 import Header from '@components/Header';
 import WelcomeCard from '@components/WelcomeCard';
 import TemperatureCard from '@components/TemperatureCard';
@@ -10,6 +10,7 @@ import UpcomingHolidaysCard from '@components/UpcomingHolidaysCard';
 import BottomNav from '@components/BottomNav';
 import { Task } from '@components/TaskItem';
 import { colors } from '@theme/colors';
+import melissaService from '../services/MelissaService';
 
 const HomeScreen: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([
@@ -42,17 +43,69 @@ const HomeScreen: React.FC = () => {
       )
     );
 
+  const [temperature, setTemperature] = useState<number>(0);
+  const [location, setLocation] = useState<string>('Porto Real');
+  const [locationDialogVisible, setLocationDialogVisible] = useState<boolean>(false);
+
+  const loadTemperature = async (cityParam?: string) => {
+    try {
+      const effectiveLocation = cityParam ?? location;
+      const result = await melissaService.Temperatura({ city: effectiveLocation });
+      if (!Number.isNaN(result.temperature)) {
+        setTemperature(Math.round(result.temperature));
+      }
+    } catch (e) {
+      console.warn('[Melissa] Falha ao buscar temperatura:', e);
+    }
+  };
+
+  useEffect(() => {
+    loadTemperature();
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Header userName="Melissa" />
         <WelcomeCard />
         <TemperatureCard
-          temperature={22}
-          location="Porto Real, RJ"
-          onSelectLocation={() => undefined}
-          onRefresh={() => undefined}
+          temperature={temperature}
+          location={location}
+          onSelectLocation={() => setLocationDialogVisible(true)}
+          onRefresh={() => loadTemperature()}
         />
+
+        <Portal>
+          <Dialog
+            visible={locationDialogVisible}
+            onDismiss={() => setLocationDialogVisible(false)}
+          >
+            <Dialog.Title>Selecionar Local</Dialog.Title>
+            <Dialog.Content>
+              <List.Section>
+                <List.Item
+                  title="Porto Real"
+                  onPress={() => {
+                    setLocation('Porto Real');
+                    setLocationDialogVisible(false);
+                    loadTemperature('Porto Real');
+                  }}
+                />
+                <List.Item
+                  title="Resende"
+                  onPress={() => {
+                    setLocation('Resende');
+                    setLocationDialogVisible(false);
+                    loadTemperature('Resende');
+                  }}
+                />
+              </List.Section>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setLocationDialogVisible(false)}>Cancelar</Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
         <TaskListCard
           tasks={tasks}
           onToggleTask={toggleTask}

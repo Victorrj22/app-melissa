@@ -1,5 +1,5 @@
-import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+﻿import React from 'react';
+import { StyleSheet, View } from 'react-native';
 import { Button, Card, IconButton, Text } from 'react-native-paper';
 import { colors } from '@theme/colors';
 
@@ -23,26 +23,20 @@ const TemperatureCard: React.FC<TemperatureCardProps> = ({
           Temperatura atual
         </Text>
         <Button mode="outlined" compact onPress={onSelectLocation}>
-          Selecionar Local
+          Seleciona Local
         </Button>
       </View>
       <View style={styles.content}>
         <View>
           <Text variant="displaySmall" style={styles.temperature}>
-            {temperature}ºC
+            {temperature}ÂºC
           </Text>
           <Text variant="bodyMedium" style={styles.location}>
             {location}
           </Text>
         </View>
         <IconButton
-          icon={(props) => (
-            <Image
-              source={require('../../assets/refresh_icon.png')}
-              style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }}
-              resizeMode="contain"
-            />
-          )}
+          icon="refresh"
           size={28}
           mode="contained"
           containerColor={colors.primary}
