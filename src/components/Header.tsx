@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Avatar, IconButton, Text } from 'react-native-paper';
 import { colors } from '@theme/colors';
 
@@ -21,8 +21,28 @@ const Header: React.FC<HeaderProps> = ({ userName }) => (
       </View>
     </View>
     <View style={styles.actions}>
-      <IconButton icon="bell-outline" size={22} onPress={() => undefined} />
-      <IconButton icon="cog-outline" size={22} onPress={() => undefined} />
+      <IconButton
+        icon={(props) => (
+          <Image
+            source={require('../../assets/bell_icon.png')}
+            style={{ width: props.size ?? 22, height: props.size ?? 22, tintColor: props.color }}
+            resizeMode="contain"
+          />
+        )}
+        size={22}
+        onPress={() => undefined}
+      />
+      <IconButton
+        icon={(props) => (
+          <Image
+            source={require('../../assets/cog_icon.png')}
+            style={{ width: props.size ?? 22, height: props.size ?? 22, tintColor: props.color }}
+            resizeMode="contain"
+          />
+        )}
+        size={22}
+        onPress={() => undefined}
+      />
     </View>
   </View>
 );
