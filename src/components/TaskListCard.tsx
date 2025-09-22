@@ -11,30 +11,34 @@ interface TaskListCardProps {
   onToggleTask?: (taskId: string) => void;
 }
 
-const TaskListCard: React.FC<TaskListCardProps> = ({ tasks, onAddTask, onManageTasks, onToggleTask }) => (
-  <Card style={styles.card}>
-    <Card.Title
-      title="Tarefas"
-      titleStyle={styles.title}
-      right={() => (
-        <Button mode="contained" onPress={onAddTask}>
-          Add Tarefa
+const TaskListCard: React.FC<TaskListCardProps> = ({ tasks, onAddTask, onManageTasks, onToggleTask }) => {
+  if (!tasks || tasks.length === 0) return null;
+
+  return (
+    <Card style={styles.card}>
+      <Card.Title
+        title="Tarefas"
+        titleStyle={styles.title}
+        right={() => (
+          <Button mode="contained" onPress={onAddTask}>
+            Add Tarefa
+          </Button>
+        )}
+      />
+      <Card.Content>
+        {tasks.map((task, index) => (
+          <View key={task.id}>
+            <TaskItem task={task} onToggle={onToggleTask} />
+            {index < tasks.length - 1 && <Divider />}
+          </View>
+        ))}
+        <Button mode="outlined" style={styles.manageButton} onPress={onManageTasks}>
+          Gerenciar tarefas
         </Button>
-      )}
-    />
-    <Card.Content>
-      {tasks.map((task, index) => (
-        <View key={task.id}>
-          <TaskItem task={task} onToggle={onToggleTask} />
-          {index < tasks.length - 1 && <Divider />}
-        </View>
-      ))}
-      <Button mode="outlined" style={styles.manageButton} onPress={onManageTasks}>
-        Gerenciar tarefas
-      </Button>
-    </Card.Content>
-  </Card>
-);
+      </Card.Content>
+    </Card>
+  );
+};
 
 const styles = StyleSheet.create({
   card: {

@@ -51,7 +51,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
             const items = await tasksService.GetAllItensTasks(t.id);
             return { t, hasPending: items.some((i) => !i.isCompleted && !i.isCanceled) };
           } catch {
-            return { t, hasPending: true };
+            // Em caso de erro ao buscar itens, não considerar como pendente para evitar falsos positivos
+            return { t, hasPending: false };
           }
         })
       );
@@ -65,6 +66,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
       setTasks(mapped.slice(0, 2));
     } catch (e) {
       console.warn('[Tasks] Falha ao carregar tarefas:', e);
+      // Em caso de falha geral, não exibir tarefas para não confundir o usuário
+      setTasks([]);
     }
   };
 
@@ -177,7 +180,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
 
         {tasks.length === 0 ? (
           <Card style={{ backgroundColor: colors.surface, borderRadius: 18, padding: 16 }}>
-            <Text style={{ color: colors.textSecondary }}>Nenhuma tarefa pendente</Text>
+            <Text style={{ color: colors.textSecondary }}>Nenhuma tarefa pendente.</Text>
             <Button mode="outlined" style={{ marginTop: 12 }} onPress={onManageTasks}>
               Gerenciar tarefas
             </Button>
