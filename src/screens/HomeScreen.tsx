@@ -28,10 +28,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
     );
 
   const [temperature, setTemperature] = useState<number>(0);
+  const [temperatureLoading, setTemperatureLoading] = useState<boolean>(false);
   const [location, setLocation] = useState<string>('Porto Real');
   const [locationDialogVisible, setLocationDialogVisible] = useState<boolean>(false);
 
   const loadTemperature = async (cityParam?: string) => {
+    setTemperatureLoading(true);
     try {
       const effectiveLocation = cityParam ?? location;
       const result = await melissaService.Temperatura({ city: effectiveLocation });
@@ -40,6 +42,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
       }
     } catch (e) {
       console.warn('[Melissa] Falha ao buscar temperatura:', e);
+    } finally {
+      setTemperatureLoading(false);
     }
   };
   const loadTasks = async () => {
@@ -122,6 +126,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
                 <TemperatureCard
           temperature={temperature}
           location={location}
+          loading={temperatureLoading}
           onSelectLocation={() => setLocationDialogVisible(true)}
           onRefresh={() => loadTemperature()}
         />
@@ -145,6 +150,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
                     setLocation('Resende');
                     setLocationDialogVisible(false);
                     loadTemperature('Resende');
+                  }}
+                />
+                <List.Item
+                  title="São Paulo"
+                  onPress={() => {
+                    setLocation('São Paulo');
+                    setLocationDialogVisible(false);
+                    loadTemperature('São Paulo');
                   }}
                 />
               </List.Section>

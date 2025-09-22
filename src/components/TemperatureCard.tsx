@@ -6,6 +6,7 @@ import { colors } from '@theme/colors';
 interface TemperatureCardProps {
   temperature: number;
   location: string;
+  loading?: boolean;
   onSelectLocation?: () => void;
   onRefresh?: () => void;
 }
@@ -14,7 +15,8 @@ const TemperatureCard: React.FC<TemperatureCardProps> = ({
   temperature,
   location,
   onSelectLocation,
-  onRefresh
+  onRefresh,
+  loading
 }) => (
   <Card style={styles.card} mode="contained">
     <Card.Content>
@@ -29,7 +31,7 @@ const TemperatureCard: React.FC<TemperatureCardProps> = ({
       <View style={styles.content}>
         <View>
           <Text variant="displaySmall" style={styles.temperature}>
-            {temperature}ºC
+            {loading ? '- °C' : `${temperature}ºC`}
           </Text>
           <Text variant="bodyMedium" style={styles.location}>
             {location}
