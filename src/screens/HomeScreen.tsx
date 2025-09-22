@@ -72,6 +72,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
     loadTasks();
   }, []);
 
+  // Load temperature when screen mounts
+  useEffect(() => {
+    loadTemperature();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const currentYear = new Date().getFullYear();
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [markedDates, setMarkedDates] = useState<string[]>([]);
@@ -188,7 +194,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
         <UpcomingHolidaysCard holidays={holidays} onOpenCalendar={openCalendar} /><YearCalendarModal visible={calendarVisible} onDismiss={() => setCalendarVisible(false)} year={currentYear} markedDates={markedDates} />
       </ScrollView>
       <Divider />
-      <BottomNav />
+      <BottomNav onPressTasks={onManageTasks} />
     </SafeAreaView>
   );
 };
