@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Checkbox, Text } from 'react-native-paper';
 import { colors } from '@theme/colors';
@@ -17,7 +17,7 @@ interface TaskItemProps {
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle }) => (
   <View style={styles.container}>
-    <Checkbox.Android
+    <Checkbox
       status={task.completed ? 'checked' : 'unchecked'}
       onPress={() => onToggle?.(task.id)}
     />

@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Appbar, ActivityIndicator, Text, List, Checkbox, Button } from 'react-native-paper';
 import { colors } from '@theme/colors';
 import tasksService, { TaskDto, TaskItemDto } from '../services/TasksService';
@@ -44,10 +44,14 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
 
   return (
     <View style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={onBack} />
+            <Appbar.Header>
+        <Appbar.Action onPress={onBack} icon={(props) => (
+          <Image source={require("../../assets/back_icon.png")} style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }} resizeMode="contain" />
+        )} />
         <Appbar.Content title={task.title} titleStyle={allCompleted ? styles.strikeHeader : undefined} />
-        <Appbar.Action icon="refresh" onPress={load} />
+        <Appbar.Action onPress={load} icon={(props) => (
+          <Image source={require("../../assets/refresh_icon.png")} style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }} resizeMode="contain" />
+        )} />
       </Appbar.Header>
       <View style={styles.content}>
         {loading && <ActivityIndicator />}
@@ -60,7 +64,7 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
                 title={i.description}
                 titleStyle={i.isCompleted ? styles.strikeText : undefined}
                 left={(props) => (
-                  <Checkbox.Android
+                  <Checkbox
                     status={i.isCompleted ? 'checked' : 'unchecked'}
                     onPress={() => toggleItem(i)}
                   />

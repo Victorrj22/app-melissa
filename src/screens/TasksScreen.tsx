@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Appbar, ActivityIndicator, Text, List, Button } from 'react-native-paper';
 import { colors } from '@theme/colors';
 import tasksService, { TaskDto } from '../services/TasksService';
@@ -33,10 +33,14 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
 
   return (
     <View style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={onBack} />
+            <Appbar.Header>
+        <Appbar.Action onPress={onBack} icon={(props) => (
+          <Image source={require("../../assets/back_icon.png")} style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }} resizeMode="contain" />
+        )} />
         <Appbar.Content title="Tarefas" />
-        <Appbar.Action icon="refresh" onPress={load} />
+        <Appbar.Action onPress={load} icon={(props) => (
+          <Image source={require("../../assets/refresh_icon.png")} style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }} resizeMode="contain" />
+        )} />
       </Appbar.Header>
       <View style={styles.content}>
         {loading && <ActivityIndicator />}
@@ -48,7 +52,13 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
                 <List.Item
                   title={t.title}
                   description={t.description}
-                  right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                  right={(props) => (
+                    <Image
+                      source={require("../../assets/chevron_right_icon.png")}
+                      style={{ width: (props.size ?? 24), height: (props.size ?? 24), tintColor: props.color }}
+                      resizeMode="contain"
+                    />
+                  )}
                 />
               </TouchableOpacity>
             ))}
@@ -66,4 +76,14 @@ const styles = StyleSheet.create({
 });
 
 export default TasksScreen;
+
+
+
+
+
+
+
+
+
+
 
