@@ -31,7 +31,9 @@ const renderIcon = (name: 'home' | 'microfone' | 'task') => (props: { size: numb
   );
 };
 
-const BottomNav: React.FC = () => (
+type BottomNavProps = { onPressTasks?: () => void };
+
+const BottomNav: React.FC<BottomNavProps> = ({ onPressTasks }) => (
   <View style={styles.container}>
     {actions.map((action, index) => (
       <IconButton
@@ -41,7 +43,9 @@ const BottomNav: React.FC = () => (
         style={index === 0 ? styles.active : undefined}
         iconColor={index === 0 ? '#fff' : colors.textSecondary}
         containerColor={index === 0 ? colors.primary : 'transparent'}
-        onPress={() => undefined}
+        onPress={() => {
+          if (action.key === 'tasks') onPressTasks?.();
+        }}
       />
     ))}
   </View>
