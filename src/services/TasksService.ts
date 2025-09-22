@@ -3,12 +3,15 @@ export type AddNewItemParams = { taskId: number; taskDescription: string };
 export type CompleteItemParams = { taskItenId: number };
 export type CancelItemParams = { taskItenId: number; taskId: number };
 export type SendTaskByEmailParams = { email: string; taskId: number; taskName: string };
+export type ArchiveTaskParams = { taskId: number };
+export type UnarchiveTaskParams = { taskId: number };
 
 export type TaskDto = {
   id: number;
   title: string;
   description: string;
   includedAt: string;
+  isArchived?: boolean;
 };
 
 export type TaskItemDto = {
@@ -44,6 +47,12 @@ export class TasksService {
       Object.entries(query).forEach(([k, v]) => {
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
       });
+    }
+
+    const method = (init?.method || 'GET').toString().toUpperCase();
+    // Bust cache for GET requests to avoid stale lists after archive/unarchive
+    if (method === 'GET') {
+      url.searchParams.set('_', Date.now().toString());
     }
 
     const controller = new AbortController();
@@ -88,6 +97,10 @@ export class TasksService {
     return await this.request<TaskDto[]>('/melissa/GetAllTasks', undefined, { method: 'GET' });
   }
 
+  async GetArchivedTasks(): Promise<TaskDto[]> {
+    return await this.request<TaskDto[]>('/melissa/GetArchivedTasks', undefined, { method: 'GET' });
+  }
+
   async GetAllItensTasks(taskId: number): Promise<TaskItemDto[]> {
     return await this.request<TaskItemDto[]>('/melissa/GetAllItensTasks', { taskId }, { method: 'GET' });
   }
@@ -103,6 +116,14 @@ export class TasksService {
   async SendTaskByEmail(params: SendTaskByEmailParams): Promise<void> {
     await this.request('/melissa/SendTaskByEmail', { email: params.email, taskId: params.taskId, taskName: params.taskName }, { method: 'POST' });
   }
+
+  async ArchiveTaskById(params: ArchiveTaskParams): Promise<void> {
+    await this.request('/melissa/ArchiveTaskById', { taskId: params.taskId }, { method: 'POST' });
+  }
+
+  async UnarchiveTaskById(params: UnarchiveTaskParams): Promise<void> {
+    await this.request('/melissa/UnarchiveTaskById', { taskId: params.taskId }, { method: 'POST' });
+  }
 }
 
 const DEFAULT_BASE_URL = (() => {
@@ -113,9 +134,6 @@ const DEFAULT_BASE_URL = (() => {
 
 export const tasksService = new TasksService(DEFAULT_BASE_URL);
 export default tasksService;
-
-
-
 
 
 

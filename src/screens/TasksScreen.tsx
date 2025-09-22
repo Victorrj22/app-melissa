@@ -1,6 +1,6 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Appbar, ActivityIndicator, Text, List, Button } from 'react-native-paper';
+import { Appbar, ActivityIndicator, Text, List, Button, SegmentedButtons } from 'react-native-paper';
 import { colors } from '@theme/colors';
 import tasksService, { TaskDto } from '../services/TasksService';
 
@@ -10,16 +10,17 @@ export interface TasksScreenProps {
 }
 
 const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
-  const [tasks, setTasks] = useState<TaskDto[] | null>(null);
+  const [allTasks, setAllTasks] = useState<TaskDto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<'open' | 'archived'>('open');
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await tasksService.GetAllTasks();
-      setTasks(data);
+      setAllTasks(data);
     } catch (e: any) {
       setError(e?.message || 'Falha ao buscar tarefas');
     } finally {
@@ -30,6 +31,29 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
   useEffect(() => {
     load();
   }, []);
+
+  const archiveTask = async (t: TaskDto) => {
+    try {
+      await tasksService.ArchiveTaskById({ taskId: t.id });
+      load();
+    } catch (e) {
+      console.warn('[Tasks] Falha ao arquivar tarefa', e);
+    }
+  };
+
+  const unarchiveTask = async (t: TaskDto) => {
+    try {
+      await tasksService.UnarchiveTaskById({ taskId: t.id });
+      load();
+    } catch (e) {
+      console.warn('[Tasks] Falha ao desarquivar tarefa', e);
+    }
+  };
+
+  const tasks = useMemo(() => {
+    const list = allTasks ?? [];
+    return list.filter((t) => (tab === 'archived' ? !!t.isArchived : !t.isArchived));
+  }, [allTasks, tab]);
 
   return (
     <View style={styles.container}>
@@ -43,6 +67,16 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
         )} />
       </Appbar.Header>
       <View style={styles.content}>
+        <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+          <SegmentedButtons
+            value={tab}
+            onValueChange={(v) => setTab(v as 'open' | 'archived')}
+            buttons={[
+              { value: 'open', label: 'Abertas' },
+              { value: 'archived', label: 'Arquivadas' }
+            ]}
+          />
+        </View>
         {loading && <ActivityIndicator />}
         {error && <Text style={styles.error}>{error}</Text>}
         {tasks && (
@@ -53,11 +87,18 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
                   title={t.title}
                   description={t.description}
                   right={(props) => (
-                    <Image
-                      source={require("../../assets/chevron_right_icon.png")}
-                      style={{ width: (props.size ?? 24), height: (props.size ?? 24), tintColor: props.color }}
-                      resizeMode="contain"
-                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      {tab === 'open' ? (
+                        <Button compact onPress={() => archiveTask(t)}>Arquivar</Button>
+                      ) : (
+                        <Button compact onPress={() => unarchiveTask(t)}>Desarquivar</Button>
+                      )}
+                      <Image
+                        source={require("../../assets/chevron_right_icon.png")}
+                        style={{ width: (props.size ?? 24), height: (props.size ?? 24), tintColor: props.color, marginLeft: 8 }}
+                        resizeMode="contain"
+                      />
+                    </View>
                   )}
                 />
               </TouchableOpacity>
