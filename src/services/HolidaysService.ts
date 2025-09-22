@@ -74,7 +74,7 @@ export class HolidaysService {
 
 const DEFAULT_BASE_URL = (() => {
   const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-  const base = fromEnv || 'http://192.168.1.101:5179';
+  const base = fromEnv || 'http://192.168.1.105:5179';
   return base;
 })();
 

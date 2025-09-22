@@ -49,7 +49,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
         dtos.map(async (t) => {
           try {
             const items = await tasksService.GetAllItensTasks(t.id);
-            return { t, hasPending: items.some((i) => !i.isCompleted) };
+            return { t, hasPending: items.some((i) => !i.isCompleted && !i.isCanceled) };
           } catch {
             return { t, hasPending: true };
           }

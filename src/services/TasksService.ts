@@ -1,6 +1,7 @@
 ﻿export type AddNewTaskParams = { taskTitle: string; taskDescription?: string | null };
 export type AddNewItemParams = { taskId: number; taskDescription: string };
 export type CompleteItemParams = { taskItenId: number };
+export type CancelItemParams = { taskItenId: number; taskId: number };
 export type SendTaskByEmailParams = { email: string; taskId: number; taskName: string };
 
 export type TaskDto = {
@@ -17,6 +18,8 @@ export type TaskItemDto = {
   includedAt: string;
   completedAt?: string | null;
   isCompleted: boolean;
+  canceledAt?: string | null;
+  isCanceled: boolean;
 };
 
 type RequestOptions = { timeoutMs?: number };
@@ -93,6 +96,10 @@ export class TasksService {
     await this.request('/melissa/CompleteItenTask', { taskItenId: params.taskItenId }, { method: 'POST' });
   }
 
+  async CancelTaskItenById(params: CancelItemParams): Promise<void> {
+    await this.request('/melissa/CancelTaskItenById', { taskItenId: params.taskItenId, taskId: params.taskId }, { method: 'POST' });
+  }
+
   async SendTaskByEmail(params: SendTaskByEmailParams): Promise<void> {
     await this.request('/melissa/SendTaskByEmail', { email: params.email, taskId: params.taskId, taskName: params.taskName }, { method: 'POST' });
   }
@@ -100,13 +107,12 @@ export class TasksService {
 
 const DEFAULT_BASE_URL = (() => {
   const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-  const base = fromEnv || 'http://192.168.1.101:5179';
+  const base = fromEnv || 'http://192.168.1.105:5179';
   return base;
 })();
 
 export const tasksService = new TasksService(DEFAULT_BASE_URL);
 export default tasksService;
-
 
 
 

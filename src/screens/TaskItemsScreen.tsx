@@ -15,6 +15,8 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [addItemVisible, setAddItemVisible] = useState(false);
   const [newItemDesc, setNewItemDesc] = useState('');
+  const [cancelVisible, setCancelVisible] = useState(false);
+  const [itemToCancel, setItemToCancel] = useState<TaskItemDto | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -33,7 +35,7 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
     load();
   }, [task.id]);
 
-  const allCompleted = useMemo(() => (items ? items.every((i) => i.isCompleted) : false), [items]);
+  const allCompleted = useMemo(() => (items ? items.filter((i) => !i.isCanceled).every((i) => i.isCompleted) : false), [items]);
 
   const toggleItem = async (it: TaskItemDto) => {
     try {
@@ -54,6 +56,24 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
       load();
     } catch (e) {
       console.warn('[Tasks] Falha ao adicionar item', e);
+    }
+  };
+
+  const startCancelItem = (it: TaskItemDto) => {
+    setItemToCancel(it);
+    setCancelVisible(true);
+  };
+
+  const confirmCancelItem = async () => {
+    if (!itemToCancel) return;
+    try {
+      await tasksService.CancelTaskItenById({ taskItenId: itemToCancel.id, taskId: task.id });
+      setItems((prev) => (prev ? prev.filter((x) => x.id !== itemToCancel.id) : prev));
+    } catch (e) {
+      console.warn('[Tasks] Falha ao cancelar item', e);
+    } finally {
+      setCancelVisible(false);
+      setItemToCancel(null);
     }
   };
 
@@ -85,6 +105,19 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
               <Button onPress={submitNewItem}>Adicionar</Button>
             </Dialog.Actions>
           </Dialog>
+          <Dialog visible={cancelVisible} onDismiss={() => setCancelVisible(false)}>
+            <Dialog.Title>Cancelar item</Dialog.Title>
+            <Dialog.Content>
+              <Text>Tem certeza que deseja cancelar este item?</Text>
+              {!!itemToCancel && (
+                <Text style={{ marginTop: 8, color: colors.textSecondary }}>{itemToCancel.description}</Text>
+              )}
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setCancelVisible(false)}>Não</Button>
+              <Button onPress={confirmCancelItem}>Sim, cancelar</Button>
+            </Dialog.Actions>
+          </Dialog>
         </Portal>
 
         <Button mode="contained" style={{ margin: 12, alignSelf: 'flex-start' }} onPress={() => setAddItemVisible(true)}>
@@ -94,7 +127,9 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
         {error && <Text style={styles.error}>{error}</Text>}
         {items && (
           <List.Section>
-            {items.map((i) => (
+            {items
+              .filter((i) => !i.isCanceled)
+              .map((i) => (
               <List.Item
                 key={i.id}
                 title={i.description}
@@ -105,6 +140,9 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
                     onPress={() => toggleItem(i)}
                   />
                 )}
+                right={() => (!i.isCompleted ? (
+                  <Button compact onPress={() => startCancelItem(i)}>Cancelar</Button>
+                ) : null)}
               />
             ))}
           </List.Section>
