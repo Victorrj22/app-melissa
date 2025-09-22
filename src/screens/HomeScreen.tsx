@@ -1,7 +1,8 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Divider, Portal, Dialog, List, Button } from 'react-native-paper';
+import { Divider, Portal, Dialog, List, Button, Card, Text } from 'react-native-paper';
+import { TextInput } from 'react-native-paper';
 import Header from '@components/Header';
 import WelcomeCard from '@components/WelcomeCard';
 import TemperatureCard from '@components/TemperatureCard';
@@ -10,25 +11,15 @@ import UpcomingHolidaysCard from '@components/UpcomingHolidaysCard';
 import YearCalendarModal from '@components/YearCalendarModal';
 import { getUpcomingHolidays, type UpcomingHolidayItem, getHolidayDateStringsForYear } from '@utils/holidayLoader';
 import BottomNav from '@components/BottomNav';
+import tasksService from '../services/TasksService';
 import { Task } from '@components/TaskItem';
 import { colors } from '@theme/colors';
 import melissaService from '../services/TemperatureService';
 
-const HomeScreen: React.FC = () => {
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Revisar relatÃ³rios trimestrais',
-      dueDate: new Date('2025-09-17'),
-      completed: false
-    },
-    {
-      id: '2',
-      title: 'Enviar feedback da equipe',
-      dueDate: new Date('2025-09-22'),
-      completed: true
-    }
-  ]);
+type HomeScreenProps = { onManageTasks?: () => void };
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
+  const [tasks, setTasks] = useState<Task[]>([]);
   const toggleTask = (taskId: string) =>
     setTasks((previous) =>
       previous.map((task) =>
@@ -51,9 +42,34 @@ const HomeScreen: React.FC = () => {
       console.warn('[Melissa] Falha ao buscar temperatura:', e);
     }
   };
+  const loadTasks = async () => {
+    try {
+      const dtos = await tasksService.GetAllTasks();
+      const withItems = await Promise.all(
+        dtos.map(async (t) => {
+          try {
+            const items = await tasksService.GetAllItensTasks(t.id);
+            return { t, hasPending: items.some((i) => !i.isCompleted) };
+          } catch {
+            return { t, hasPending: true };
+          }
+        })
+      );
+      const pending = withItems.filter((x) => x.hasPending).map((x) => x.t);
+      const mapped: Task[] = pending.map((t) => ({
+        id: String(t.id),
+        title: t.title,
+        dueDate: new Date(t.includedAt),
+        completed: false
+      }));
+      setTasks(mapped.slice(0, 2));
+    } catch (e) {
+      console.warn('[Tasks] Falha ao carregar tarefas:', e);
+    }
+  };
 
   useEffect(() => {
-    loadTemperature();
+    loadTasks();
   }, []);
 
   const currentYear = new Date().getFullYear();
@@ -65,6 +81,22 @@ const HomeScreen: React.FC = () => {
     setCalendarVisible(true);
   };
 
+    const [addTaskVisible, setAddTaskVisible] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDesc, setNewTaskDesc] = useState('');
+  const onAddTask = () => setAddTaskVisible(true);
+  const submitNewTask = async () => {
+    if (!newTaskTitle.trim()) { setAddTaskVisible(false); return; }
+    try {
+      await tasksService.AddNewTask({ taskTitle: newTaskTitle.trim(), taskDescription: newTaskDesc.trim() || undefined });
+      setAddTaskVisible(false);
+      setNewTaskTitle('');
+      setNewTaskDesc('');
+      loadTasks();
+    } catch (e) {
+      console.warn('[Tasks] Falha ao adicionar tarefa:', e);
+    }
+  };
   const [holidays, setHolidays] = useState<UpcomingHolidayItem[]>([]);
   useEffect(() => {
     (async () => {
@@ -78,7 +110,7 @@ const HomeScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Header userName="Melissa" />
         <WelcomeCard />
-        <TemperatureCard
+                <TemperatureCard
           temperature={temperature}
           location={location}
           onSelectLocation={() => setLocationDialogVisible(true)}
@@ -86,10 +118,7 @@ const HomeScreen: React.FC = () => {
         />
 
         <Portal>
-          <Dialog
-            visible={locationDialogVisible}
-            onDismiss={() => setLocationDialogVisible(false)}
-          >
+          <Dialog visible={locationDialogVisible} onDismiss={() => setLocationDialogVisible(false)}>
             <Dialog.Title>Selecionar Local</Dialog.Title>
             <Dialog.Content>
               <List.Section>
@@ -115,15 +144,48 @@ const HomeScreen: React.FC = () => {
               <Button onPress={() => setLocationDialogVisible(false)}>Cancelar</Button>
             </Dialog.Actions>
           </Dialog>
+
+          <Dialog visible={addTaskVisible} onDismiss={() => setAddTaskVisible(false)}>
+            <Dialog.Title>Nova Tarefa</Dialog.Title>
+            <Dialog.Content>
+              <TextInput
+                label="Titulo"
+                value={newTaskTitle}
+                onChangeText={setNewTaskTitle}
+                mode="outlined"
+                style={{ marginBottom: 8 }}
+              />
+              <TextInput
+                label="Descricao (opcional)"
+                value={newTaskDesc}
+                onChangeText={setNewTaskDesc}
+                mode="outlined"
+              />
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setAddTaskVisible(false)}>Cancelar</Button>
+              <Button onPress={submitNewTask}>Adicionar</Button>
+            </Dialog.Actions>
+          </Dialog>
         </Portal>
-        <TaskListCard
-          tasks={tasks}
-          onToggleTask={toggleTask}
-          onAddTask={() => undefined}
-          onManageTasks={() => undefined}
-        />
-        <UpcomingHolidaysCard holidays={holidays} onOpenCalendar={openCalendar} />
-        <YearCalendarModal visible={calendarVisible} onDismiss={() => setCalendarVisible(false)} year={currentYear} markedDates={markedDates} />
+
+        {tasks.length === 0 ? (
+          <Card style={{ backgroundColor: colors.surface, borderRadius: 18, padding: 16 }}>
+            <Text style={{ color: colors.textSecondary }}>Nenhuma tarefa pendente</Text>
+            <Button mode="outlined" style={{ marginTop: 12 }} onPress={onManageTasks}>
+              Gerenciar tarefas
+            </Button>
+          </Card>
+        ) : (
+          <TaskListCard
+            tasks={tasks}
+            onToggleTask={toggleTask}
+            onAddTask={onAddTask}
+            onManageTasks={onManageTasks}
+          />
+        )}
+
+        <UpcomingHolidaysCard holidays={holidays} onOpenCalendar={openCalendar} /><YearCalendarModal visible={calendarVisible} onDismiss={() => setCalendarVisible(false)} year={currentYear} markedDates={markedDates} />
       </ScrollView>
       <Divider />
       <BottomNav />

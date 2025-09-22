@@ -1,4 +1,7 @@
-﻿import React, { useEffect } from 'react';
+﻿import TasksScreen from '@screens/TasksScreen';
+import TaskItemsScreen from '@screens/TaskItemsScreen';
+import { TaskDto } from './src/services/TasksService';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
 import HomeScreen from '@screens/HomeScreen';
@@ -15,15 +18,27 @@ const App: React.FC = () => {
       });
     }
   }, []);
+  const [route, setRoute] = useState<{ name: 'home' } | { name: 'tasks' } | { name: 'taskItems'; task: TaskDto }>({ name: 'home' });
+
+  const openTasks = () => setRoute({ name: 'tasks' });
+  const openTaskItems = (task: TaskDto) => setRoute({ name: 'taskItems', task });
+  const goHome = () => setRoute({ name: 'home' });
+  const goTasks = () => setRoute({ name: 'tasks' });
+
   return (
-  <PaperProvider theme={theme}>
-    <SafeAreaProvider>
-      <HomeScreen />
-    </SafeAreaProvider>
-  </PaperProvider>
+    <PaperProvider theme={theme}>
+      <SafeAreaProvider>
+        {route.name === 'home' && <HomeScreen onManageTasks={openTasks} />}
+        {route.name === 'tasks' && (
+          <TasksScreen onBack={goHome} onOpenTask={openTaskItems} />
+        )}
+        {route.name === 'taskItems' && (
+          <TaskItemsScreen task={route.task} onBack={goTasks} />
+        )}
+      </SafeAreaProvider>
+    </PaperProvider>
   );
 };
 
 export default App;
-
 
