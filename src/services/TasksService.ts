@@ -80,8 +80,8 @@ export class TasksService {
     await this.request('/melissa/AddNewTask', { taskTitle: params.taskTitle, taskDescription: params.taskDescription ?? undefined }, { method: 'POST' });
   }
 
-  async AddNewItenTask(params: AddNewItemParams): Promise<void> {
-    await this.request('/melissa/AddNewItenTask', { taskId: params.taskId, taskDescription: params.taskDescription }, { method: 'POST' });
+  async AddNewItemTask(params: AddNewItemParams): Promise<void> {
+    await this.request('/melissa/AddNewItemTask', { taskId: params.taskId, taskDescription: params.taskDescription }, { method: 'POST' });
   }
 
   async GetAllTasks(): Promise<TaskDto[]> {
@@ -92,12 +92,12 @@ export class TasksService {
     return await this.request<TaskItemDto[]>('/melissa/GetAllItensTasks', { taskId }, { method: 'GET' });
   }
 
-  async CompleteItenTask(params: CompleteItemParams): Promise<void> {
-    await this.request('/melissa/CompleteItenTask', { taskItenId: params.taskItenId }, { method: 'POST' });
+  async CompleteItemTask(params: CompleteItemParams): Promise<void> {
+    await this.request('/melissa/CompleteItemTask', { taskItenId: params.taskItenId }, { method: 'POST' });
   }
 
-  async CancelTaskItenById(params: CancelItemParams): Promise<void> {
-    await this.request('/melissa/CancelTaskItenById', { taskItenId: params.taskItenId, taskId: params.taskId }, { method: 'POST' });
+  async CancelTaskItemById(params: CancelItemParams): Promise<void> {
+    await this.request('/melissa/CancelTaskItemById', { taskItenId: params.taskItenId, taskId: params.taskId }, { method: 'POST' });
   }
 
   async SendTaskByEmail(params: SendTaskByEmailParams): Promise<void> {

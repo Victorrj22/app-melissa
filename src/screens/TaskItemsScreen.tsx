@@ -39,7 +39,7 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
 
   const toggleItem = async (it: TaskItemDto) => {
     try {
-      await tasksService.CompleteItenTask({ taskItenId: it.id });
+      await tasksService.CompleteItemTask({ taskItenId: it.id });
       setItems((prev) => prev?.map((p) => (p.id === it.id ? { ...p, isCompleted: !p.isCompleted } : p)) || null);
     } catch (e) {
       console.warn('[Tasks] Falha ao completar item', e);
@@ -50,7 +50,7 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
     const desc = newItemDesc.trim();
     if (!desc) { setAddItemVisible(false); return; }
     try {
-      await tasksService.AddNewItenTask({ taskId: task.id, taskDescription: desc });
+      await tasksService.AddNewItemTask({ taskId: task.id, taskDescription: desc });
       setAddItemVisible(false);
       setNewItemDesc('');
       load();
@@ -67,7 +67,7 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
   const confirmCancelItem = async () => {
     if (!itemToCancel) return;
     try {
-      await tasksService.CancelTaskItenById({ taskItenId: itemToCancel.id, taskId: task.id });
+      await tasksService.CancelTaskItemById({ taskItenId: itemToCancel.id, taskId: task.id });
       setItems((prev) => (prev ? prev.filter((x) => x.id !== itemToCancel.id) : prev));
     } catch (e) {
       console.warn('[Tasks] Falha ao cancelar item', e);
