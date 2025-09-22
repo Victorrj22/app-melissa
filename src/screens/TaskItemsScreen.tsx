@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, Image } from 'react-native';
-import { Appbar, ActivityIndicator, Text, List, Checkbox, Button } from 'react-native-paper';
+import { Appbar, ActivityIndicator, Text, List, Checkbox, Button, Portal, Dialog, TextInput } from 'react-native-paper';
 import { colors } from '@theme/colors';
 import tasksService, { TaskDto, TaskItemDto } from '../services/TasksService';
 
@@ -13,6 +13,8 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
   const [items, setItems] = useState<TaskItemDto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addItemVisible, setAddItemVisible] = useState(false);
+  const [newItemDesc, setNewItemDesc] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -42,6 +44,19 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
     }
   };
 
+  const submitNewItem = async () => {
+    const desc = newItemDesc.trim();
+    if (!desc) { setAddItemVisible(false); return; }
+    try {
+      await tasksService.AddNewItenTask({ taskId: task.id, taskDescription: desc });
+      setAddItemVisible(false);
+      setNewItemDesc('');
+      load();
+    } catch (e) {
+      console.warn('[Tasks] Falha ao adicionar item', e);
+    }
+  };
+
   return (
     <View style={styles.container}>
             <Appbar.Header>
@@ -54,6 +69,27 @@ const TaskItemsScreen: React.FC<TaskItemsScreenProps> = ({ task, onBack }) => {
         )} />
       </Appbar.Header>
       <View style={styles.content}>
+        <Portal>
+          <Dialog visible={addItemVisible} onDismiss={() => setAddItemVisible(false)}>
+            <Dialog.Title>Novo Item</Dialog.Title>
+            <Dialog.Content>
+              <TextInput
+                label="Descrição"
+                value={newItemDesc}
+                onChangeText={setNewItemDesc}
+                mode="outlined"
+              />
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={() => setAddItemVisible(false)}>Cancelar</Button>
+              <Button onPress={submitNewItem}>Adicionar</Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
+
+        <Button mode="contained" style={{ margin: 12, alignSelf: 'flex-start' }} onPress={() => setAddItemVisible(true)}>
+          Adicionar Item
+        </Button>
         {loading && <ActivityIndicator />}
         {error && <Text style={styles.error}>{error}</Text>}
         {items && (
