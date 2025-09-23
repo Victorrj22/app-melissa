@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image, Alert } from 'react-native';
 import { Appbar, TextInput, Button, Text, Card } from 'react-native-paper';
 import { colors } from '@theme/colors';
 import DatePickerModal from '@components/DatePickerModal';
+import conversationService from '../services/ConversationService';
+import userSettings from '../services/UserSettings';
 
 export interface SettingsScreenProps {
   onBack: () => void;
@@ -10,7 +12,7 @@ export interface SettingsScreenProps {
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   const [server, setServer] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(userSettings.email || '');
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
   const [fromVisible, setFromVisible] = useState(false);
@@ -22,6 +24,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
     return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+  const onSubmitHistory = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      Alert.alert('Atenção', 'Informe um email.');
+      return;
+    }
+    if (!fromDate || !toDate) {
+      Alert.alert('Atenção', 'Selecione as datas De e Até.');
+      return;
+    }
+    try {
+      userSettings.email = trimmedEmail;
+      const start = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0, 0);
+      const end = endOfDay(toDate);
+      await conversationService.SendEmailConversationHistoryByPeriod({
+        email: trimmedEmail,
+        startPeriod: start,
+        endPeriod: end
+      });
+      Alert.alert('Solicitação enviada', 'O histórico será enviado por email.');
+    } catch (e: any) {
+      Alert.alert('Falha', e?.message || 'Falha ao solicitar histórico.');
+    }
   };
 
   return (
@@ -63,7 +92,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(v) => { setEmail(v); userSettings.email = v; }}
             />
           </Card.Content>
         </Card>
@@ -91,7 +120,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
                 showSoftInputOnFocus={false}
                 onFocus={() => setToVisible(true)}
               />
-              <Button mode="contained" style={{ alignSelf: 'center', marginLeft: 4 }} onPress={() => undefined}>
+              <Button mode="contained" style={{ alignSelf: 'center', marginLeft: 4 }} onPress={onSubmitHistory}>
                 Solicitar
               </Button>
             </View>
