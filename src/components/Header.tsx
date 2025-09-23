@@ -5,9 +5,10 @@ import { colors } from '@theme/colors';
 
 interface HeaderProps {
   userName: string;
+  onOpenSettings?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ userName }) => (
+const Header: React.FC<HeaderProps> = ({ userName, onOpenSettings }) => (
   <View style={styles.container}>
     <View style={styles.identity}>
       <Avatar.Text size={44} label={userName.charAt(0)} style={styles.avatar} />
@@ -41,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({ userName }) => (
           />
         )}
         size={22}
-        onPress={() => undefined}
+        onPress={onOpenSettings}
       />
     </View>
   </View>

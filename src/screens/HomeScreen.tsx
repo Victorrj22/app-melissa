@@ -16,9 +16,9 @@ import { Task } from '@components/TaskItem';
 import { colors } from '@theme/colors';
 import melissaService from '../services/TemperatureService';
 
-type HomeScreenProps = { onManageTasks?: () => void };
+type HomeScreenProps = { onManageTasks?: () => void; onOpenSettings?: () => void };
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks, onOpenSettings }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const toggleTask = (taskId: string) =>
     setTasks((previous) =>
@@ -123,7 +123,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Header userName="Melissa" />
+        <Header userName="Melissa" onOpenSettings={onOpenSettings} />
         <WelcomeCard />
                 <TemperatureCard
           temperature={temperature}
