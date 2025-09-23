@@ -196,7 +196,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks }) => {
         {tasks.length === 0 ? (
           <Card style={{ backgroundColor: colors.surface, borderRadius: 18, padding: 16 }}>
             <Text style={{ color: colors.textSecondary }}>Nenhuma tarefa pendente.</Text>
-            <Button mode="outlined" style={{ marginTop: 12 }} onPress={onManageTasks}>
+            <Button mode="contained" style={{ marginTop: 12 }} onPress={onAddTask}>
+              Nova Tarefa
+            </Button>
+            <Button mode="outlined" style={{ marginTop: 8 }} onPress={onManageTasks}>
               Gerenciar tarefas
             </Button>
           </Card>

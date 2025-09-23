@@ -95,7 +95,7 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
                       )}
                       <Image
                         source={require("../../assets/chevron_right_icon.png")}
-                        style={{ width: (props.size ?? 24), height: (props.size ?? 24), tintColor: props.color, marginLeft: 8 }}
+                        style={{ width: 24, height: 24, tintColor: props.color, marginLeft: 8 }}
                         resizeMode="contain"
                       />
                     </View>

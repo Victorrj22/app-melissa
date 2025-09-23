@@ -96,7 +96,7 @@ export class TemperatureService {
 
 const DEFAULT_BASE_URL = (() => {
   const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-  const base = 'http://192.168.1.105:5179';
+  const base = 'http://192.168.1.100:5179';
 
   return base;
 })();

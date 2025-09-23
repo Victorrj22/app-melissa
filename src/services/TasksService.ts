@@ -30,6 +30,7 @@ type RequestOptions = { timeoutMs?: number };
 export class TasksService {
   private baseUrl: string;
   private defaultTimeoutMs: number;
+  private addItemEndpoint?: string;
 
   constructor(baseUrl: string, options?: { timeoutMs?: number }) {
     this.baseUrl = baseUrl.replace(/\/$/, '');
@@ -90,7 +91,45 @@ export class TasksService {
   }
 
   async AddNewItemTask(params: AddNewItemParams): Promise<void> {
-    await this.request('/melissa/AddNewItemTask', { taskId: params.taskId, taskDescription: params.taskDescription }, { method: 'POST' });
+    // If a working endpoint was discovered previously, try it first
+    if (this.addItemEndpoint) {
+      try {
+        await this.request(this.addItemEndpoint, { taskId: params.taskId, taskDescription: params.taskDescription }, { method: 'POST' });
+        return;
+      } catch (e: any) {
+        // If server changed and this route is gone, forget and re-discover
+        if (typeof e?.message === 'string' && e.message.includes('HTTP 404')) {
+          this.addItemEndpoint = undefined;
+        } else {
+          throw e;
+        }
+      }
+    }
+
+    // Discover the correct endpoint once and cache it
+    const candidates = [
+      '/melissa/AddNewItenTask',
+      '/melissa/AddNewItemTask',
+      '/melissa/AddNewTaskItem',
+      '/melissa/AddNewItensTask'
+    ];
+    let lastErr: unknown;
+    for (const path of candidates) {
+      try {
+        await this.request(path, { taskId: params.taskId, taskDescription: params.taskDescription }, { method: 'POST' });
+        this.addItemEndpoint = path;
+        return;
+      } catch (e: any) {
+        lastErr = e;
+        if (typeof e?.message === 'string' && e.message.includes('HTTP 404')) {
+          continue; // try next candidate silently
+        }
+        // For non-404 errors, rethrow immediately
+        throw e;
+      }
+    }
+    // If all variants failed with 404, throw the last error
+    throw lastErr instanceof Error ? lastErr : new Error('Falha ao adicionar item da tarefa');
   }
 
   async GetAllTasks(): Promise<TaskDto[]> {
@@ -128,12 +167,10 @@ export class TasksService {
 
 const DEFAULT_BASE_URL = (() => {
   const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-  const base = fromEnv || 'http://192.168.1.105:5179';
+  const base = fromEnv || 'http://192.168.1.100:5179';
   return base;
 })();
 
 export const tasksService = new TasksService(DEFAULT_BASE_URL);
 export default tasksService;
-
-
 
