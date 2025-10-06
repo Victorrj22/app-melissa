@@ -1,8 +1,9 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { Appbar, ActivityIndicator, Text, List, Button, SegmentedButtons } from 'react-native-paper';
 import { colors } from '@theme/colors';
 import tasksService, { TaskDto } from '../services/TasksService';
+import userSettings from '../services/UserSettings';
 
 export interface TasksScreenProps {
   onBack: () => void;
@@ -38,6 +39,25 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
       load();
     } catch (e) {
       console.warn('[Tasks] Falha ao arquivar tarefa', e);
+    }
+  };
+
+  const sendTask = async (t: TaskDto) => {
+    try {
+      await userSettings.init();
+      const snapshot = userSettings.getSnapshot();
+      const email = (snapshot.email || '').trim();
+      if (!email) {
+        Alert.alert('Atenção', 'Configure um email na tela de configurações antes de enviar a tarefa.');
+        return;
+      }
+
+      await tasksService.SendTaskByEmail({ email, taskId: t.id, taskName: t.title });
+      Alert.alert('Sucesso', 'A tarefa foi enviada por email.');
+    } catch (e) {
+      console.warn('[Tasks] Falha ao enviar tarefa por email', e);
+      const message = e instanceof Error ? e.message : undefined;
+      Alert.alert('Falha', message || 'Não foi possível enviar a tarefa.');
     }
   };
 
@@ -89,7 +109,10 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
                   right={(props) => (
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       {tab === 'open' ? (
-                        <Button compact onPress={() => archiveTask(t)}>Arquivar</Button>
+                        <View style={styles.actionGroup}>
+                          <Button compact onPress={() => sendTask(t)}>Enviar</Button>
+                          <Button compact onPress={() => archiveTask(t)}>Arquivar</Button>
+                        </View>
                       ) : (
                         <Button compact onPress={() => unarchiveTask(t)}>Desarquivar</Button>
                       )}
@@ -113,10 +136,15 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1 },
-  error: { color: 'crimson', padding: 12 }
+  error: { color: 'crimson', padding: 12 },
+  actionGroup: { flexDirection: 'row', alignItems: 'center', gap: 4 }
 });
 
 export default TasksScreen;
+
+
+
+
 
 
 
