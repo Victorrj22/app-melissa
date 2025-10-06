@@ -1,4 +1,6 @@
-﻿export type AddNewTaskParams = { taskTitle: string; taskDescription?: string | null };
+import userSettings from './UserSettings';
+
+export type AddNewTaskParams = { taskTitle: string; taskDescription?: string | null };
 export type AddNewItemParams = { taskId: number; taskDescription: string };
 export type CompleteItemParams = { taskItenId: number };
 export type CancelItemParams = { taskItenId: number; taskId: number };
@@ -28,12 +30,12 @@ export type TaskItemDto = {
 type RequestOptions = { timeoutMs?: number };
 
 export class TasksService {
-  private baseUrl: string;
+  private readonly baseUrlProvider: () => string;
   private defaultTimeoutMs: number;
   private addItemEndpoint?: string;
 
-  constructor(baseUrl: string, options?: { timeoutMs?: number }) {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
+  constructor(baseUrlProvider: () => string, options?: { timeoutMs?: number }) {
+    this.baseUrlProvider = baseUrlProvider;
     this.defaultTimeoutMs = options?.timeoutMs ?? 10000;
   }
 
@@ -43,7 +45,8 @@ export class TasksService {
     init?: RequestInit,
     options?: RequestOptions
   ): Promise<T> {
-    const url = new URL(this.baseUrl + path);
+    const baseUrl = (this.baseUrlProvider() || DEFAULT_BASE_URL).replace(/\/$/, '');
+    const url = new URL(baseUrl + path);
     if (query) {
       Object.entries(query).forEach(([k, v]) => {
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
@@ -165,12 +168,17 @@ export class TasksService {
   }
 }
 
-const DEFAULT_BASE_URL = (() => {
-  const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-  const base = fromEnv || 'http://192.168.1.100:5179';
-  return base;
-})();
+const DEFAULT_BASE_URL = userSettings.getBaseUrl();
 
-export const tasksService = new TasksService(DEFAULT_BASE_URL);
+const resolveBaseUrl = (): string => {
+  const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.trim();
+  if (fromEnv && fromEnv.length > 0) {
+    return fromEnv.replace(/\/$/, '');
+  }
+  return userSettings.getBaseUrl();
+};
+
+export const tasksService = new TasksService(resolveBaseUrl);
 export default tasksService;
+
 

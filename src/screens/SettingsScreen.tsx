@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, Image, Alert } from 'react-native';
 import { Appbar, TextInput, Button, Text, Card } from 'react-native-paper';
 import { colors } from '@theme/colors';
@@ -11,12 +11,49 @@ export interface SettingsScreenProps {
 }
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
-  const [server, setServer] = useState('');
-  const [email, setEmail] = useState(userSettings.email || '');
+  const initialSettings = userSettings.getSnapshot();
+  const [server, setServer] = useState(initialSettings.server || '');
+  const [email, setEmail] = useState(initialSettings.email || '');
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
   const [fromVisible, setFromVisible] = useState(false);
   const [toVisible, setToVisible] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    userSettings
+      .init()
+      .then(() => {
+        if (cancelled) return;
+        const snapshot = userSettings.getSnapshot();
+        setServer(snapshot.server || '');
+        setEmail(snapshot.email || '');
+      })
+      .catch((err) => {
+        console.warn('[SettingsScreen] Falha ao carregar as configurações.', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const persistServer = useCallback(async (value: string) => {
+    try {
+      const updated = await userSettings.setServerHost(value);
+      setServer(updated.server || '');
+    } catch (err) {
+      console.warn('[SettingsScreen] Failed to persist server.', err);
+    }
+  }, []);
+
+  const persistEmail = useCallback(async (value: string) => {
+    try {
+      const updated = await userSettings.setEmail(value);
+      setEmail(updated.email || '');
+    } catch (err) {
+      console.warn('[SettingsScreen] Failed to persist email.', err);
+    }
+  }, []);
 
   const formatDate = (d: Date | null) => {
     if (!d) return '';
@@ -39,7 +76,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
       return;
     }
     try {
-      userSettings.email = trimmedEmail;
+      await persistEmail(trimmedEmail);
       const start = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0, 0);
       const end = endOfDay(toDate);
       await conversationService.SendEmailConversationHistoryByPeriod({
@@ -48,8 +85,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
         endPeriod: end
       });
       Alert.alert('Solicitação enviada', 'O histórico será enviado por email.');
-    } catch (e: any) {
-      Alert.alert('Falha', e?.message || 'Falha ao solicitar histórico.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : undefined;
+      Alert.alert('Falha', message || 'Falha ao solicitar histórico.');
     }
   };
 
@@ -73,27 +111,51 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
         <Card style={styles.card}>
           <Card.Title title="Servidor" />
           <Card.Content>
-            <TextInput
-              mode="outlined"
-              label="Servidor"
-              placeholder="http://192.168.1.100:5179"
-              value={server}
-              onChangeText={setServer}
-            />
+            <View style={styles.inputRow}>
+              <TextInput
+                mode="outlined"
+                label="Servidor"
+                placeholder="172.16.1.94"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                value={server}
+                onChangeText={setServer}
+                style={styles.inputFlex}
+              />
+              <Button
+                mode="contained"
+                onPress={() => { void persistServer(server); }}
+                style={styles.confirmButton}
+              >
+                Confirmar
+              </Button>
+            </View>
           </Card.Content>
         </Card>
 
         <Card style={styles.card}>
           <Card.Title title="Email" />
           <Card.Content>
-            <TextInput
-              mode="outlined"
-              label="Email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={(v) => { setEmail(v); userSettings.email = v; }}
-            />
+            <View style={styles.inputRow}>
+              <TextInput
+                mode="outlined"
+                label="Email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
+                style={styles.inputFlex}
+              />
+              <Button
+                mode="contained"
+                onPress={() => { void persistEmail(email); }}
+                style={styles.confirmButton}
+              >
+                Confirmar
+              </Button>
+            </View>
           </Card.Content>
         </Card>
 
@@ -146,7 +208,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, padding: 16, gap: 12 },
-  card: { backgroundColor: colors.surface, borderRadius: 16 }
+  card: { backgroundColor: colors.surface, borderRadius: 16 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  inputFlex: { flex: 1 },
+  confirmButton: { marginTop: 4, alignSelf: 'flex-start' }
 });
 
 export default SettingsScreen;

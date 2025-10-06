@@ -14,7 +14,7 @@ Aplicativo mobile construído com React Native (Expo) que replica o layout propo
 
 ```bash
 npm install
-npm run start
+npx expo start -c
 ```
 
 Depois utilize o aplicativo Expo Go ou um emulador para visualizar a aplicação.

@@ -1,13 +1,15 @@
+import userSettings from './UserSettings';
+
 export type RequestOptions = {
   timeoutMs?: number;
 };
 
 export class ConversationService {
-  private baseUrl: string;
+  private readonly baseUrlProvider: () => string;
   private defaultTimeoutMs: number;
 
-  constructor(baseUrl: string, options?: { timeoutMs?: number }) {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
+  constructor(baseUrlProvider: () => string, options?: { timeoutMs?: number }) {
+    this.baseUrlProvider = baseUrlProvider;
     this.defaultTimeoutMs = options?.timeoutMs ?? 10000;
   }
 
@@ -17,7 +19,8 @@ export class ConversationService {
     init?: RequestInit,
     options?: RequestOptions
   ): Promise<T> {
-    const url = new URL(this.baseUrl + path);
+    const baseUrl = (this.baseUrlProvider() || DEFAULT_BASE_URL).replace(/\/$/, '');
+    const url = new URL(baseUrl + path);
     if (query) {
       Object.entries(query).forEach(([k, v]) => {
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
@@ -73,12 +76,17 @@ export class ConversationService {
   }
 }
 
-const DEFAULT_BASE_URL = (() => {
-  const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-  const base = fromEnv || 'http://192.168.1.100:5179';
-  return base;
-})();
+const DEFAULT_BASE_URL = userSettings.getBaseUrl();
 
-export const conversationService = new ConversationService(DEFAULT_BASE_URL);
+const resolveBaseUrl = (): string => {
+  const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.trim();
+  if (fromEnv && fromEnv.length > 0) {
+    return fromEnv.replace(/\/$/, '');
+  }
+  return userSettings.getBaseUrl();
+};
+
+export const conversationService = new ConversationService(resolveBaseUrl);
 export default conversationService;
+
 

@@ -1,3 +1,5 @@
+import userSettings from './UserSettings';
+
 export type TemperatureParams = {
   city?: string;
 };
@@ -11,11 +13,11 @@ type RequestOptions = {
 };
 
 export class TemperatureService {
-  private baseUrl: string;
+  private readonly baseUrlProvider: () => string;
   private defaultTimeoutMs: number;
 
-  constructor(baseUrl: string, options?: { timeoutMs?: number }) {
-    this.baseUrl = baseUrl.replace(/\/$/, '');
+  constructor(baseUrlProvider: () => string, options?: { timeoutMs?: number }) {
+    this.baseUrlProvider = baseUrlProvider;
     this.defaultTimeoutMs = options?.timeoutMs ?? 10000;
   }
 
@@ -25,7 +27,8 @@ export class TemperatureService {
     init?: RequestInit,
     options?: RequestOptions
   ): Promise<T> {
-    const url = new URL(this.baseUrl + path);
+    const baseUrl = (this.baseUrlProvider() || DEFAULT_BASE_URL).replace(/\/$/, '');
+    const url = new URL(baseUrl + path);
     if (query) {
       Object.entries(query).forEach(([k, v]) => {
         if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
@@ -84,7 +87,7 @@ export class TemperatureService {
     if (typeof data === 'number') {
       temperature = data;
     } else if (typeof data === 'string') {
-      const match = data.match(/-?\d+(?:[\.,]\d+)?/);
+      const match = data.match(/-?\d+(?:[.,]\d+)?/);
       temperature = match ? parseFloat(match[0].replace(',', '.')) : NaN;
     }
 
@@ -94,13 +97,16 @@ export class TemperatureService {
   }
 }
 
-const DEFAULT_BASE_URL = (() => {
-  const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.replace(/\/$/, '');
-  const base = 'http://192.168.1.100:5179';
+const DEFAULT_BASE_URL = userSettings.getBaseUrl();
 
-  return base;
-})();
+const resolveBaseUrl = (): string => {
+  const fromEnv = (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined)?.trim();
+  if (fromEnv && fromEnv.length > 0) {
+    return fromEnv.replace(/\/$/, '');
+  }
+  return userSettings.getBaseUrl();
+};
 
-export const temperatureService = new TemperatureService(DEFAULT_BASE_URL);
+export const temperatureService = new TemperatureService(resolveBaseUrl);
 
 export default temperatureService;
