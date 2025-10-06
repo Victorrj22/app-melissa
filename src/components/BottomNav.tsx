@@ -3,10 +3,12 @@ import { StyleSheet, View, Image } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { colors } from '@theme/colors';
 
-const actions = [
+type ActionKey = 'home' | 'microphone' | 'tasks';
+
+const actions: Array<{ icon: 'home' | 'microfone' | 'task'; key: ActionKey }> = [
   { icon: 'home', key: 'home' },
   { icon: 'microfone', key: 'microphone' },
-  { icon: 'task', key: 'tasks' },
+  { icon: 'task', key: 'tasks' }
 ];
 
 const renderIcon = (name: 'home' | 'microfone' | 'task') => (props: { size: number; color: string }) => {
@@ -31,23 +33,33 @@ const renderIcon = (name: 'home' | 'microfone' | 'task') => (props: { size: numb
   );
 };
 
-type BottomNavProps = { onPressTasks?: () => void };
+type BottomNavProps = {
+  active?: ActionKey;
+  onPressHome?: () => void;
+  onPressMicrophone?: () => void;
+  onPressTasks?: () => void;
+};
 
-const BottomNav: React.FC<BottomNavProps> = ({ onPressTasks }) => (
+const BottomNav: React.FC<BottomNavProps> = ({ active = 'home', onPressHome, onPressMicrophone, onPressTasks }) => (
   <View style={styles.container}>
-    {actions.map((action, index) => (
-      <IconButton
-        key={action.key}
-        icon={renderIcon(action.icon as 'home' | 'microfone' | 'task')}
-        size={28}
-        style={index === 0 ? styles.active : undefined}
-        iconColor={index === 0 ? '#fff' : colors.textSecondary}
-        containerColor={index === 0 ? colors.primary : 'transparent'}
-        onPress={() => {
-          if (action.key === 'tasks') onPressTasks?.();
-        }}
-      />
-    ))}
+    {actions.map((action) => {
+      const isActive = active === action.key;
+      return (
+        <IconButton
+          key={action.key}
+          icon={renderIcon(action.icon)}
+          size={28}
+          style={isActive ? styles.active : undefined}
+          iconColor={isActive ? '#fff' : colors.textSecondary}
+          containerColor={isActive ? colors.primary : 'transparent'}
+          onPress={() => {
+            if (action.key === 'home') onPressHome?.();
+            else if (action.key === 'microphone') onPressMicrophone?.();
+            else if (action.key === 'tasks') onPressTasks?.();
+          }}
+        />
+      );
+    })}
   </View>
 );
 

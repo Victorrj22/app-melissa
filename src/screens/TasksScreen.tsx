@@ -4,6 +4,8 @@ import { Appbar, ActivityIndicator, Text, List, Button, SegmentedButtons } from 
 import { colors } from '@theme/colors';
 import tasksService, { TaskDto } from '../services/TasksService';
 import userSettings from '../services/UserSettings';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import BottomNav from '@components/BottomNav';
 
 export interface TasksScreenProps {
   onBack: () => void;
@@ -76,64 +78,82 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
   }, [allTasks, tab]);
 
   return (
-    <View style={styles.container}>
-            <Appbar.Header>
-        <Appbar.Action onPress={onBack} icon={(props) => (
-          <Image source={require("../../assets/back_icon.png")} style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }} resizeMode="contain" />
-        )} />
-        <Appbar.Content title="Tarefas" />
-        <Appbar.Action onPress={load} icon={(props) => (
-          <Image source={require("../../assets/refresh_icon.png")} style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }} resizeMode="contain" />
-        )} />
-      </Appbar.Header>
-      <View style={styles.content}>
-        <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
-          <SegmentedButtons
-            value={tab}
-            onValueChange={(v) => setTab(v as 'open' | 'archived')}
-            buttons={[
-              { value: 'open', label: 'Abertas' },
-              { value: 'archived', label: 'Arquivadas' }
-            ]}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Appbar.Header>
+          <Appbar.Action
+            onPress={onBack}
+            icon={(props) => (
+              <Image
+                source={require('../../assets/back_icon.png')}
+                style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }}
+                resizeMode="contain"
+              />
+            )}
           />
+          <Appbar.Content title="Tarefas" />
+          <Appbar.Action
+            onPress={load}
+            icon={(props) => (
+              <Image
+                source={require('../../assets/refresh_icon.png')}
+                style={{ width: props.size ?? 24, height: props.size ?? 24, tintColor: props.color }}
+                resizeMode="contain"
+              />
+            )}
+          />
+        </Appbar.Header>
+        <View style={styles.content}>
+          <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+            <SegmentedButtons
+              value={tab}
+              onValueChange={(v) => setTab(v as 'open' | 'archived')}
+              buttons={[
+                { value: 'open', label: 'Abertas' },
+                { value: 'archived', label: 'Arquivadas' }
+              ]}
+            />
+          </View>
+          {loading && <ActivityIndicator />}
+          {error && <Text style={styles.error}>{error}</Text>}
+          {tasks && (
+            <List.Section>
+              {tasks.map((t) => (
+                <TouchableOpacity key={t.id} onPress={() => onOpenTask(t)}>
+                  <List.Item
+                    title={t.title}
+                    description={t.description}
+                    right={(props) => (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {tab === 'open' ? (
+                          <View style={styles.actionGroup}>
+                            <Button compact onPress={() => sendTask(t)}>Enviar</Button>
+                            <Button compact onPress={() => archiveTask(t)}>Arquivar</Button>
+                          </View>
+                        ) : (
+                          <Button compact onPress={() => unarchiveTask(t)}>Desarquivar</Button>
+                        )}
+                        <Image
+                          source={require('../../assets/chevron_right_icon.png')}
+                          style={{ width: 24, height: 24, tintColor: props.color, marginLeft: 8 }}
+                          resizeMode="contain"
+                        />
+                      </View>
+                    )}
+                  />
+                </TouchableOpacity>
+              ))}
+            </List.Section>
+          )}
         </View>
-        {loading && <ActivityIndicator />}
-        {error && <Text style={styles.error}>{error}</Text>}
-        {tasks && (
-          <List.Section>
-            {tasks.map((t) => (
-              <TouchableOpacity key={t.id} onPress={() => onOpenTask(t)}>
-                <List.Item
-                  title={t.title}
-                  description={t.description}
-                  right={(props) => (
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      {tab === 'open' ? (
-                        <View style={styles.actionGroup}>
-                          <Button compact onPress={() => sendTask(t)}>Enviar</Button>
-                          <Button compact onPress={() => archiveTask(t)}>Arquivar</Button>
-                        </View>
-                      ) : (
-                        <Button compact onPress={() => unarchiveTask(t)}>Desarquivar</Button>
-                      )}
-                      <Image
-                        source={require("../../assets/chevron_right_icon.png")}
-                        style={{ width: 24, height: 24, tintColor: props.color, marginLeft: 8 }}
-                        resizeMode="contain"
-                      />
-                    </View>
-                  )}
-                />
-              </TouchableOpacity>
-            ))}
-          </List.Section>
-        )}
       </View>
-    </View>
+      <BottomNav active="tasks" onPressHome={onBack} />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1 },
   error: { color: 'crimson', padding: 12 },
@@ -141,6 +161,22 @@ const styles = StyleSheet.create({
 });
 
 export default TasksScreen;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
