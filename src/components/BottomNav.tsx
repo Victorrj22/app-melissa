@@ -38,9 +38,18 @@ type BottomNavProps = {
   onPressHome?: () => void;
   onPressMicrophone?: () => void;
   onPressTasks?: () => void;
+  onMicrophonePressIn?: () => void;
+  onMicrophonePressOut?: () => void;
 };
 
-const BottomNav: React.FC<BottomNavProps> = ({ active = 'home', onPressHome, onPressMicrophone, onPressTasks }) => (
+const BottomNav: React.FC<BottomNavProps> = ({
+  active = 'home',
+  onPressHome,
+  onPressMicrophone,
+  onPressTasks,
+  onMicrophonePressIn,
+  onMicrophonePressOut
+}) => (
   <View style={styles.container}>
     {actions.map((action) => {
       const isActive = active === action.key;
@@ -57,6 +66,12 @@ const BottomNav: React.FC<BottomNavProps> = ({ active = 'home', onPressHome, onP
             else if (action.key === 'microphone') onPressMicrophone?.();
             else if (action.key === 'tasks') onPressTasks?.();
           }}
+          {...(action.key === 'microphone'
+            ? {
+                onPressIn: onMicrophonePressIn,
+                onPressOut: onMicrophonePressOut
+              }
+            : {})}
         />
       );
     })}

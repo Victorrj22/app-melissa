@@ -2,12 +2,14 @@
 import TaskItemsScreen from '@screens/TaskItemsScreen';
 import SettingsScreen from '@screens/SettingsScreen';
 import { TaskDto } from './src/services/TasksService';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
 import HomeScreen from '@screens/HomeScreen';
 import holidaysService from './src/services/HolidaysService';
 import { theme } from '@theme/index';
+import audioChatService from '@services/AudioChatService';
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -32,12 +34,42 @@ const App: React.FC = () => {
   const goTasks = () => setRoute({ name: 'tasks' });
   const openSettings = () => setRoute({ name: 'settings' });
 
+  const startVoice = useCallback(async () => {
+    try {
+      await audioChatService.startStreaming();
+    } catch (err) {
+      console.warn('[AudioChat] Falha ao iniciar transmissão.', err);
+      const message = err instanceof Error ? err.message : undefined;
+      Alert.alert('Falha', message || 'Não foi possível iniciar a transmissão de áudio.');
+    }
+  }, []);
+
+  const stopVoice = useCallback(async () => {
+    try {
+      await audioChatService.stopStreaming();
+    } catch (err) {
+      console.warn('[AudioChat] Falha ao finalizar transmissão.', err);
+    }
+  }, []);
+
   return (
     <PaperProvider theme={theme}>
       <SafeAreaProvider>
-        {route.name === 'home' && <HomeScreen onManageTasks={openTasks} onOpenSettings={openSettings} />}
+        {route.name === 'home' && (
+          <HomeScreen
+            onManageTasks={openTasks}
+            onOpenSettings={openSettings}
+            onStartVoice={startVoice}
+            onStopVoice={stopVoice}
+          />
+        )}
         {route.name === 'tasks' && (
-          <TasksScreen onBack={goHome} onOpenTask={openTaskItems} />
+          <TasksScreen
+            onBack={goHome}
+            onOpenTask={openTaskItems}
+            onStartVoice={startVoice}
+            onStopVoice={stopVoice}
+          />
         )}
         {route.name === 'taskItems' && (
           <TaskItemsScreen task={route.task} onBack={goTasks} />

@@ -10,9 +10,11 @@ import BottomNav from '@components/BottomNav';
 export interface TasksScreenProps {
   onBack: () => void;
   onOpenTask: (task: TaskDto) => void;
+  onStartVoice?: () => void;
+  onStopVoice?: () => void;
 }
 
-const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
+const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask, onStartVoice, onStopVoice }) => {
   const [allTasks, setAllTasks] = useState<TaskDto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,7 +149,12 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask }) => {
           )}
         </View>
       </View>
-      <BottomNav active="tasks" onPressHome={onBack} />
+      <BottomNav
+        active="tasks"
+        onPressHome={onBack}
+        onMicrophonePressIn={onStartVoice}
+        onMicrophonePressOut={onStopVoice}
+      />
     </SafeAreaView>
   );
 };

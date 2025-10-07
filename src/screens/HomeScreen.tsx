@@ -16,9 +16,14 @@ import { Task } from '@components/TaskItem';
 import { colors } from '@theme/colors';
 import melissaService from '../services/TemperatureService';
 
-type HomeScreenProps = { onManageTasks?: () => void; onOpenSettings?: () => void };
+type HomeScreenProps = {
+  onManageTasks?: () => void;
+  onOpenSettings?: () => void;
+  onStartVoice?: () => void;
+  onStopVoice?: () => void;
+};
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks, onOpenSettings }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks, onOpenSettings, onStartVoice, onStopVoice }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const toggleTask = (taskId: string) =>
     setTasks((previous) =>
@@ -215,7 +220,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks, onOpenSettings }
         <UpcomingHolidaysCard holidays={holidays} onOpenCalendar={openCalendar} /><YearCalendarModal visible={calendarVisible} onDismiss={() => setCalendarVisible(false)} year={currentYear} markedDates={markedDates} />
       </ScrollView>
       <Divider />
-      <BottomNav active="home" onPressTasks={onManageTasks} />
+      <BottomNav
+        active="home"
+        onPressTasks={onManageTasks}
+        onMicrophonePressIn={onStartVoice}
+        onMicrophonePressOut={onStopVoice}
+      />
     </SafeAreaView>
   );
 };
