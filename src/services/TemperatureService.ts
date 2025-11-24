@@ -18,7 +18,7 @@ export class TemperatureService {
 
   constructor(baseUrlProvider: () => string, options?: { timeoutMs?: number }) {
     this.baseUrlProvider = baseUrlProvider;
-    this.defaultTimeoutMs = options?.timeoutMs ?? 10000;
+    this.defaultTimeoutMs = options?.timeoutMs ?? 30000; // Aumentado para 30s
   }
 
   private async request<T>(

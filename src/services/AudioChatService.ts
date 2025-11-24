@@ -149,12 +149,15 @@ class AudioChatService {
       const baseUrl = userSettings.getBaseUrl().replace(/\/$/, '');
       const hubUrl = `${baseUrl}/melissa`;
 
+      console.log('[AudioChatService] Connecting to SignalR Hub:', hubUrl);
+
       const connection = new HubConnectionBuilder()
         .withUrl(hubUrl)
         .withAutomaticReconnect()
         .build();
 
       await connection.start();
+      console.log('[AudioChatService] Connected successfully');
       this.connection = connection;
     })();
 

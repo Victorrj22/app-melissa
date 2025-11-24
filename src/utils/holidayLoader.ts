@@ -2,7 +2,7 @@
   Lê um arquivo Txt que contém os feriados Nacionais do ano.
 */
 
-import { Image } from 'react-native';
+import userSettings from '../services/UserSettings';
 
 export interface UpcomingHolidayItem {
   id: string;
@@ -21,9 +21,34 @@ interface GroupedHoliday {
   end: Date;
 }
 
-const HOLIDAY_TXT_MODULE = require('../../Utils/holidays.txt');
-
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+
+/**
+ * Busca o conteúdo dos feriados do servidor
+ */
+async function fetchHolidaysContent(): Promise<string> {
+  const baseUrl = userSettings.getBaseUrl();
+  const url = `${baseUrl}/melissa/ExportNationalHolidaysToTxt`;
+  console.log('[Holidays] Fetching from:', url);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    console.log('[Holidays] Response status:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+
+    const content = await response.text();
+    console.log('[Holidays] Content length:', content.length);
+    return content;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 const monthAbbrevPtBr: Record<number, string> = {
   0: 'Jan.',
@@ -117,12 +142,7 @@ const toDisplayItems = (groups: GroupedHoliday[]): UpcomingHolidayItem[] =>
   });
 export async function getUpcomingHolidays(limit = 2): Promise<UpcomingHolidayItem[]> {
   try {
-    const resolved = Image.resolveAssetSource(HOLIDAY_TXT_MODULE);
-    const uri: string | undefined = resolved?.uri;
-    if (!uri) return [];
-
-    const response = await fetch(uri);
-    const content = await response.text();
+    const content = await fetchHolidaysContent();
 
     const lines = content
       .split(/\r?\n/)
@@ -158,11 +178,7 @@ const expandRangeToDates = (range: HolidayRange): Date[] => {
 const ymd = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
 async function loadGrouped(): Promise<HolidayRange[]> {
-  const resolved = Image.resolveAssetSource(HOLIDAY_TXT_MODULE);
-  const uri: string | undefined = resolved?.uri;
-  if (!uri) return [];
-  const response = await fetch(uri);
-  const content = await response.text();
+  const content = await fetchHolidaysContent();
   const lines = content
     .split(/\r?\n/)
     .map((l) => l.trim())

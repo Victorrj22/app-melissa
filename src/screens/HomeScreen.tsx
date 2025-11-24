@@ -119,9 +119,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks, onOpenSettings, 
   };
   const [holidays, setHolidays] = useState<UpcomingHolidayItem[]>([]);
   useEffect(() => {
+    console.log('[HomeScreen] Loading holidays...');
     (async () => {
-      const nextTwo = await getUpcomingHolidays(2);
-      setHolidays(nextTwo);
+      try {
+        const nextTwo = await getUpcomingHolidays(2);
+        console.log('[HomeScreen] Holidays loaded:', nextTwo.length);
+        setHolidays(nextTwo);
+      } catch (error) {
+        console.error('[HomeScreen] Failed to load holidays:', error);
+      }
     })();
   }, []);
 

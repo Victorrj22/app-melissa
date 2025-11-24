@@ -30,7 +30,7 @@ type AsyncStorageTarget = {
   remove?(): Promise<void>;
 };
 
-const DEFAULT_SERVER_HOST = '172.16.1.94';
+const DEFAULT_SERVER_HOST = '192.168.1.103';
 const SETTINGS_FILE_NAME = 'settings.txt';
 const NODE_EXTERNAL_SETTINGS_PATH = 'C:\\dev\\settings.txt';
 const SETTINGS_STORAGE_KEY = 'app-melissa::user-settings';
@@ -40,7 +40,7 @@ const DEFAULT_SNAPSHOT: UserSettingsSnapshot = {
   email: ''
 };
 
-const PORT_SUFFIX = ':5179';
+const PORT_SUFFIX = ':8080';
 const URL_PREFIX = 'http://';
 
 class UserSettingsStore {
@@ -82,7 +82,9 @@ class UserSettingsStore {
 
   subscribe(listener: SettingsListener): () => void {
     this.listeners.add(listener);
-    listener(this.getSnapshot());
+    const snapshot = this.getSnapshot();
+    console.log('[UserSettings] Subscriber added. Current snapshot:', snapshot);
+    listener(snapshot);
     return () => {
       this.listeners.delete(listener);
     };
@@ -91,11 +93,14 @@ class UserSettingsStore {
   async setServerHost(host: string): Promise<UserSettingsSnapshot> {
     await this.init();
     const sanitized = sanitizeServerHost(host) || DEFAULT_SERVER_HOST;
+    console.log('[UserSettings] setServerHost:', { input: host, sanitized, current: this.snapshot.server });
     if (sanitized === this.snapshot.server) {
+      console.log('[UserSettings] Server host unchanged, skipping update');
       return this.getSnapshot();
     }
     this.snapshot = { ...this.snapshot, server: sanitized };
     await this.persist();
+    console.log('[UserSettings] Server host updated and persisted:', this.snapshot.server);
     this.notify();
     return this.getSnapshot();
   }
@@ -461,7 +466,9 @@ export function buildBaseUrl(host: string): string {
   const sanitized = sanitizeServerHost(host) || DEFAULT_SERVER_HOST;
   const needsBrackets = sanitized.includes(':') && !sanitized.startsWith('[');
   const hostSegment = needsBrackets ? `[${sanitized}]` : sanitized;
-  return `${URL_PREFIX}${hostSegment}${PORT_SUFFIX}`;
+  const url = `${URL_PREFIX}${hostSegment}${PORT_SUFFIX}`;
+  console.log('[UserSettings] buildBaseUrl:', { input: host, sanitized, output: url });
+  return url;
 }
 
 function parseSettings(content: string): UserSettingsSnapshot {

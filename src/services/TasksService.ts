@@ -63,7 +63,9 @@ export class TasksService {
     const timeout = setTimeout(() => controller.abort(), options?.timeoutMs ?? this.defaultTimeoutMs);
 
     try {
-      const res = await fetch(url.toString(), {
+      const finalUrl = url.toString();
+      console.log(`[TasksService] ${method}`, finalUrl);
+      const res = await fetch(finalUrl, {
         ...init,
         headers: { 'Content-Type': 'application/json', ...(init?.headers as any) },
         signal: controller.signal

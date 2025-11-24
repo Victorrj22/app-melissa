@@ -115,7 +115,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
               <TextInput
                 mode="outlined"
                 label="Servidor"
-                placeholder="172.16.1.94"
+                placeholder="192.168.1.103"
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
@@ -131,6 +131,70 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
                 Confirmar
               </Button>
             </View>
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                try {
+                  console.log('[SettingsScreen] === Teste de Conexão Iniciado ===');
+                  console.log('[SettingsScreen] Current settings:', userSettings.getSnapshot());
+
+                  const baseUrl = userSettings.getBaseUrl();
+                  const testUrl = `${baseUrl}/health`;
+
+                  console.log('[SettingsScreen] Testing connection to:', testUrl);
+                  console.log('[SettingsScreen] Full URL breakdown:', {
+                    baseUrl,
+                    endpoint: '/health',
+                    fullUrl: testUrl
+                  });
+
+                  Alert.alert('Testando...', `Conectando em ${testUrl}`);
+
+                  const controller = new AbortController();
+                  const timeoutId = setTimeout(() => {
+                    console.log('[SettingsScreen] Request timeout after 10 seconds');
+                    controller.abort();
+                  }, 10000);
+
+                  const response = await fetch(testUrl, {
+                    method: 'GET',
+                    headers: {
+                      'Accept': 'text/plain',
+                      'User-Agent': 'Melissa-Mobile-App'
+                    },
+                    signal: controller.signal
+                  });
+
+                  clearTimeout(timeoutId);
+
+                  const text = await response.text();
+                  console.log('[SettingsScreen] Test result:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    text,
+                    headers: Object.fromEntries(response.headers.entries())
+                  });
+
+                  if (response.ok) {
+                    Alert.alert('Sucesso! ✅', `Servidor respondeu: ${text}\n\nStatus: ${response.status}`);
+                  } else {
+                    Alert.alert('Erro ❌', `Status ${response.status}: ${text}`);
+                  }
+                } catch (err: unknown) {
+                  const message = err instanceof Error ? err.message : String(err);
+                  console.error('[SettingsScreen] Test failed:', err);
+                  console.error('[SettingsScreen] Error details:', {
+                    name: (err as Error)?.name,
+                    message: (err as Error)?.message,
+                    stack: (err as Error)?.stack
+                  });
+                  Alert.alert('Falha na conexão ❌', `Erro: ${message}\n\nVerifique os logs do console para mais detalhes.`);
+                }
+              }}
+              style={{ marginTop: 8 }}
+            >
+              Testar Conexão
+            </Button>
           </Card.Content>
         </Card>
 
