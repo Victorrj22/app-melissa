@@ -13,7 +13,10 @@
       "Bash(Select-String -Pattern \"holidays|feriados|Aplicando migrations|listening\")",
       "Bash(docker exec:*)",
       "Bash(powershell -Command \"Start-Sleep -Seconds 120; docker logs melissa_webserver --tail 40\")",
-      "Bash(powershell -Command \"Start-Sleep -Seconds 120; docker logs melissa_webserver --tail 50\")"
+      "Bash(powershell -Command \"Start-Sleep -Seconds 120; docker logs melissa_webserver --tail 50\")",
+      "Bash(npm install:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx expo install @expo/vector-icons)"
     ],
     "deny": [],
     "ask": []

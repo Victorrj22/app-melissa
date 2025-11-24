@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
-import { Avatar, IconButton, Text } from 'react-native-paper';
+import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { Text } from 'react-native-paper';
 import { colors } from '@theme/colors';
+import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface HeaderProps {
   userName: string;
@@ -11,39 +13,32 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ userName, onOpenSettings }) => (
   <View style={styles.container}>
     <View style={styles.identity}>
-      <Avatar.Text size={44} label={userName.charAt(0)} style={styles.avatar} />
+      <LinearGradient
+        colors={[colors.primary, colors.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.avatar}
+      >
+        <Text style={styles.avatarText}>{userName.charAt(0)}</Text>
+      </LinearGradient>
       <View>
-        <Text variant="titleMedium" style={styles.appName}>
-          Melissa
-        </Text>
-        <Text variant="labelSmall" style={styles.caption}>
-          Sua agente de IA privativa
-        </Text>
+        <Text style={styles.appName}>Melissa</Text>
+        <Text style={styles.caption}>Sua assistente inteligente</Text>
       </View>
     </View>
     <View style={styles.actions}>
-      <IconButton
-        icon={(props) => (
-          <Image
-            source={require('../../assets/bell_icon.png')}
-            style={{ width: props.size ?? 22, height: props.size ?? 22, tintColor: props.color }}
-            resizeMode="contain"
-          />
-        )}
-        size={22}
+      <TouchableOpacity
+        style={styles.iconButton}
         onPress={() => undefined}
-      />
-      <IconButton
-        icon={(props) => (
-          <Image
-            source={require('../../assets/cog_icon.png')}
-            style={{ width: props.size ?? 22, height: props.size ?? 22, tintColor: props.color }}
-            resizeMode="contain"
-          />
-        )}
-        size={22}
+      >
+        <Feather name="bell" size={20} color={colors.textSecondary} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.iconButton}
         onPress={onOpenSettings}
-      />
+      >
+        <Feather name="settings" size={20} color={colors.textSecondary} />
+      </TouchableOpacity>
     </View>
   </View>
 );
@@ -53,26 +48,71 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingVertical: 12
+    paddingHorizontal: 4,
+    paddingVertical: 12,
+    marginBottom: 8
   },
   identity: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12
-  },
-  actions: {
-    flexDirection: 'row'
+    gap: 14
   },
   avatar: {
-    backgroundColor: colors.primary
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8
+      },
+      android: {
+        elevation: 6
+      }
+    })
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textOnPrimary
   },
   appName: {
+    fontSize: 18,
     color: colors.textPrimary,
-    fontWeight: '700'
+    fontWeight: '700',
+    letterSpacing: -0.3
   },
   caption: {
-    color: colors.textSecondary
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '500'
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 4
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4
+      },
+      android: {
+        elevation: 2
+      }
+    })
   }
 });
 
