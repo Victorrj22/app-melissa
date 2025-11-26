@@ -30,7 +30,7 @@ type AsyncStorageTarget = {
   remove?(): Promise<void>;
 };
 
-const DEFAULT_SERVER_HOST = '192.168.1.103';
+const DEFAULT_SERVER_HOST = 'https://melissa.alluneed.com.br';
 const SETTINGS_FILE_NAME = 'settings.txt';
 const NODE_EXTERNAL_SETTINGS_PATH = 'C:\\dev\\settings.txt';
 const SETTINGS_STORAGE_KEY = 'app-melissa::user-settings';
@@ -40,8 +40,8 @@ const DEFAULT_SNAPSHOT: UserSettingsSnapshot = {
   email: ''
 };
 
-const PORT_SUFFIX = ':8080';
-const URL_PREFIX = 'http://';
+const PORT_SUFFIX = '';
+const URL_PREFIX = 'https://';
 
 class UserSettingsStore {
   private snapshot: UserSettingsSnapshot = { ...DEFAULT_SNAPSHOT };

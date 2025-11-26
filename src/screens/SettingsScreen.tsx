@@ -115,7 +115,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
               <TextInput
                 mode="outlined"
                 label="Servidor"
-                placeholder="192.168.1.103"
+                placeholder="https://melissa.alluneed.com.br"
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
