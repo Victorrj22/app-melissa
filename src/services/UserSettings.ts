@@ -30,13 +30,13 @@ type AsyncStorageTarget = {
   remove?(): Promise<void>;
 };
 
-const DEFAULT_SERVER_HOST = 'https://melissa.alluneed.com.br';
+const FIXED_SERVER_HOST = 'https://melissa.alluneed.com.br';
 const SETTINGS_FILE_NAME = 'settings.txt';
 const NODE_EXTERNAL_SETTINGS_PATH = 'C:\\dev\\settings.txt';
 const SETTINGS_STORAGE_KEY = 'app-melissa::user-settings';
 const UTF8_OPTIONS = { encoding: 'utf8' as const };
 const DEFAULT_SNAPSHOT: UserSettingsSnapshot = {
-  server: DEFAULT_SERVER_HOST,
+  server: FIXED_SERVER_HOST,
   email: ''
 };
 
@@ -72,7 +72,7 @@ class UserSettingsStore {
   }
 
   getServerHost(): string {
-    return this.snapshot.server || DEFAULT_SERVER_HOST;
+    return this.snapshot.server || FIXED_SERVER_HOST;
   }
 
   getBaseUrl(): string {
@@ -92,16 +92,14 @@ class UserSettingsStore {
 
   async setServerHost(host: string): Promise<UserSettingsSnapshot> {
     await this.init();
-    const sanitized = sanitizeServerHost(host) || DEFAULT_SERVER_HOST;
-    console.log('[UserSettings] setServerHost:', { input: host, sanitized, current: this.snapshot.server });
+    const sanitized = sanitizeServerHost(host);
     if (sanitized === this.snapshot.server) {
-      console.log('[UserSettings] Server host unchanged, skipping update');
       return this.getSnapshot();
     }
     this.snapshot = { ...this.snapshot, server: sanitized };
     await this.persist();
-    console.log('[UserSettings] Server host updated and persisted:', this.snapshot.server);
     this.notify();
+    console.log('[UserSettings] setServerHost: Servidor atualizado para', sanitized);
     return this.getSnapshot();
   }
 
@@ -462,12 +460,10 @@ export function sanitizeServerHost(value: string): string {
   return host.trim();
 }
 
-export function buildBaseUrl(host: string): string {
-  const sanitized = sanitizeServerHost(host) || DEFAULT_SERVER_HOST;
-  const needsBrackets = sanitized.includes(':') && !sanitized.startsWith('[');
-  const hostSegment = needsBrackets ? `[${sanitized}]` : sanitized;
-  const url = `${URL_PREFIX}${hostSegment}${PORT_SUFFIX}`;
-  console.log('[UserSettings] buildBaseUrl:', { input: host, sanitized, output: url });
+export function buildBaseUrl(host?: string): string {
+  const effectiveHost = host || userSettings.getServerHost();
+  const url = `${URL_PREFIX}${effectiveHost}${PORT_SUFFIX}`;
+  console.log('[UserSettings] buildBaseUrl:', { output: url });
   return url;
 }
 

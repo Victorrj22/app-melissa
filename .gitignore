@@ -8,3 +8,7 @@ package-lock.json
 .DS_Store
 .idea
 .env
+
+# Native folders (managed by EAS Build)
+android/
+ios/

@@ -57,10 +57,12 @@ class AudioChatService {
   }
 
   async startStreaming(): Promise<void> {
+    console.log('[AudioChat] startStreaming chamado, awaitingResponse:', this.awaitingResponse);
     if (this.awaitingResponse) {
       throw new Error('Aguarde o fim da resposta anterior.');
     }
     if (this.recording) {
+      console.log('[AudioChat] Já existe uma gravação em andamento');
       return;
     }
 
@@ -68,12 +70,14 @@ class AudioChatService {
     await this.prepareRecording();
     this.subject = new Subject<string>();
     this.awaitingResponse = true;
+    console.log('[AudioChat] Iniciando stream de áudio');
 
     const stream = this.connection!.stream<unknown>('AskMelissaAudio', this.subject);
     const receivedChunks: Uint8Array[] = [];
 
     stream.subscribe({
       next: (chunk) => {
+        console.log('[AudioChat] Recebendo chunk de resposta');
         if (typeof chunk === 'string') {
           receivedChunks.push(Uint8Array.from(Buffer.from(chunk, 'base64')));
         } else if (chunk instanceof ArrayBuffer) {
@@ -85,7 +89,9 @@ class AudioChatService {
         }
       },
       complete: () => {
+        console.log('[AudioChat] Stream completo, recebidos', receivedChunks.length, 'chunks');
         void this.playResponse(receivedChunks).finally(() => {
+          console.log('[AudioChat] Resposta finalizada, liberando para nova gravação');
           this.awaitingResponse = false;
         });
       },
@@ -97,30 +103,37 @@ class AudioChatService {
   }
 
   async stopStreaming(): Promise<void> {
+    console.log('[AudioChat] stopStreaming chamado');
     if (!this.subject) {
+      console.log('[AudioChat] Nenhum subject ativo');
       return;
     }
 
     await this.cleanupRecording();
 
     if (!this.recordingUri) {
+      console.log('[AudioChat] Nenhum arquivo de gravação encontrado');
       this.subject.complete();
       this.subject = null;
-      this.awaitingResponse = false;
+      // awaitingResponse será setado como false pelo callback do stream
       return;
     }
 
     try {
+      console.log('[AudioChat] Enviando áudio gravado:', this.recordingUri);
       await this.streamFileAsChunks(this.recordingUri, this.subject);
+      console.log('[AudioChat] Áudio enviado, completando subject');
+      this.subject.complete();
     } catch (err) {
       console.warn('[AudioChat] Falha ao enviar áudio gravado.', err);
       this.subject.error?.(err as Error);
     } finally {
       await this.deleteFileSafe(this.recordingUri);
       this.recordingUri = null;
-      this.subject.complete();
       this.subject = null;
-      this.awaitingResponse = false;
+      // Não setar awaitingResponse = false aqui!
+      // O callback do stream (complete/error) cuida disso após receber a resposta
+      console.log('[AudioChat] stopStreaming finalizado, aguardando resposta do servidor');
     }
   }
 
