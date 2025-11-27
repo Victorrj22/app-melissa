@@ -12,9 +12,9 @@ const WelcomeCard: React.FC = () => (
     end={{ x: 1, y: 1 }}
     style={styles.card}
   >
-    <View style={styles.iconContainer}>
+    {/* <View style={styles.iconContainer}>
       <Feather name="sparkles" size={24} color={colors.textOnPrimary} />
-    </View>
+    </View> */}
     <View style={styles.content}>
       <Text style={styles.title}>
         Bem-vindo à Melissa

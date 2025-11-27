@@ -61,10 +61,12 @@ class AudioChatService {
   }
 
   async startStreaming(): Promise<void> {
+    console.log('[AudioChat] startStreaming chamado, awaitingResponse:', this.awaitingResponse);
     if (this.awaitingResponse) {
       throw new Error('Aguarde o fim da resposta anterior.');
     }
     if (this.recording) {
+      console.log('[AudioChat] Já existe uma gravação em andamento');
       return;
     }
 
@@ -74,12 +76,14 @@ class AudioChatService {
     this.awaitingResponse = true;
     this.recordedPCMChunks = [];
     this.isRecordingAudio = true;
+    console.log('[AudioChat] Iniciando stream de áudio');
 
     const stream = this.connection!.stream<unknown>('AskMelissaAudioFromMobile', this.subject);
     const receivedChunks: Uint8Array[] = [];
 
     stream.subscribe({
       next: (chunk) => {
+        console.log('[AudioChat] Recebendo chunk de resposta');
         if (typeof chunk === 'string') {
           receivedChunks.push(Uint8Array.from(Buffer.from(chunk, 'base64')));
         } else if (chunk instanceof ArrayBuffer) {
@@ -91,7 +95,9 @@ class AudioChatService {
         }
       },
       complete: () => {
+        console.log('[AudioChat] Stream completo, recebidos', receivedChunks.length, 'chunks');
         void this.playResponse(receivedChunks).finally(() => {
+          console.log('[AudioChat] Resposta finalizada, liberando para nova gravação');
           this.awaitingResponse = false;
         });
       },
@@ -103,7 +109,9 @@ class AudioChatService {
   }
 
   async stopStreaming(): Promise<void> {
+    console.log('[AudioChat] stopStreaming chamado');
     if (!this.subject) {
+      console.log('[AudioChat] Nenhum subject ativo');
       return;
     }
 
@@ -122,6 +130,12 @@ class AudioChatService {
       this.subject = null;
       this.awaitingResponse = false;
       this.recordedPCMChunks = [];
+      await this.deleteFileSafe(this.recordingUri);
+      this.recordingUri = null;
+      this.subject = null;
+      // Não setar awaitingResponse = false aqui!
+      // O callback do stream (complete/error) cuida disso após receber a resposta
+      console.log('[AudioChat] stopStreaming finalizado, aguardando resposta do servidor');
     }
   }
 

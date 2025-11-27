@@ -2,32 +2,30 @@
   "expo": {
     "name": "Melissa",
     "slug": "melissa",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jbrstates.melissa"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.anonymous.melissa"
+      "package": "com.jbrstates.melissa",
+      "versionCode": 2,
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
-      "bundler": "metro",
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro"
     },
-    "entryPoint": "./index.js"
+    "extra": {
+      "eas": {
+        "projectId": "522e8669-9e77-41fa-bad4-cf442bc552da"
+      }
+    }
   }
 }
