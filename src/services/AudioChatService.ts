@@ -14,7 +14,8 @@ type Nullable<T> = T | null;
 
 const RESPONSE_DIRECTORY = FileSystem.cacheDirectory ?? FileSystem.documentDirectory ?? null;
 const RESPONSE_FILE = RESPONSE_DIRECTORY ? `${RESPONSE_DIRECTORY}melissa-response.aac` : null;
-const STREAM_CHUNK_SIZE = 16 * 1024;
+const STREAM_CHUNK_SIZE = 256 * 2; // 256 frames * 2 bytes (Int16) = 512 bytes per chunk
+const SAMPLE_RATE = 16000;
 const ensureBufferPolyfill = () => {
   if (typeof global.Buffer === 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
@@ -30,6 +31,8 @@ class AudioChatService {
   private recordingUri: string | null = null;
   private awaitingResponse = false;
   private currentAppState: AppStateStatus = AppState.currentState;
+  private recordedPCMChunks: Uint8Array[] = [];
+  private isRecordingAudio = false;
 
   constructor() {
     ensureBufferPolyfill();
@@ -54,6 +57,7 @@ class AudioChatService {
       this.recordingUri = null;
     }
     this.awaitingResponse = false;
+    this.recordedPCMChunks = [];
   }
 
   async startStreaming(): Promise<void> {
@@ -70,9 +74,11 @@ class AudioChatService {
     await this.prepareRecording();
     this.subject = new Subject<string>();
     this.awaitingResponse = true;
+    this.recordedPCMChunks = [];
+    this.isRecordingAudio = true;
     console.log('[AudioChat] Iniciando stream de áudio');
 
-    const stream = this.connection!.stream<unknown>('AskMelissaAudio', this.subject);
+    const stream = this.connection!.stream<unknown>('AskMelissaAudioFromMobile', this.subject);
     const receivedChunks: Uint8Array[] = [];
 
     stream.subscribe({
@@ -109,25 +115,21 @@ class AudioChatService {
       return;
     }
 
+    this.isRecordingAudio = false;
     await this.cleanupRecording();
 
-    if (!this.recordingUri) {
-      console.log('[AudioChat] Nenhum arquivo de gravação encontrado');
-      this.subject.complete();
-      this.subject = null;
-      // awaitingResponse será setado como false pelo callback do stream
-      return;
-    }
-
     try {
-      console.log('[AudioChat] Enviando áudio gravado:', this.recordingUri);
-      await this.streamFileAsChunks(this.recordingUri, this.subject);
-      console.log('[AudioChat] Áudio enviado, completando subject');
-      this.subject.complete();
+      // Enviar os chunks de PCM gravados
+      await this.streamPCMChunks(this.subject);
+      console.log('[AudioChat] Envio do áudio concluído');
     } catch (err) {
       console.warn('[AudioChat] Falha ao enviar áudio gravado.', err);
       this.subject.error?.(err as Error);
     } finally {
+      this.subject.complete();
+      this.subject = null;
+      this.awaitingResponse = false;
+      this.recordedPCMChunks = [];
       await this.deleteFileSafe(this.recordingUri);
       this.recordingUri = null;
       this.subject = null;
@@ -140,7 +142,8 @@ class AudioChatService {
   private async cleanupRecording(): Promise<void> {
     if (this.recording) {
       try {
-        await this.recording.stopAndUnloadAsync();
+        const status = await this.recording.stopAndUnloadAsync();
+        console.log('[AudioChat] Gravação finalizada, status:', status);
       } catch (err) {
         console.warn('[AudioChat] Falha ao finalizar gravação.', err);
       }
@@ -198,29 +201,53 @@ class AudioChatService {
     });
 
     const recording = new Audio.Recording();
+    
+    // Usar preset HIGH_QUALITY que fornece boa qualidade
     await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
     await recording.startAsync();
     this.recording = recording;
     this.recordingUri = recording.getURI();
+    
+    console.log('[AudioChat] Gravação iniciada:', this.recordingUri);
   }
-  private async streamFileAsChunks(path: string, subject: Subject<string>): Promise<void> {
-    const info = await FileSystem.getInfoAsync(path);
+
+  private async streamPCMChunks(subject: Subject<string>): Promise<void> {
+    if (!this.recordingUri) {
+      throw new Error('Nenhum arquivo de áudio foi gravado.');
+    }
+
+    const info = await FileSystem.getInfoAsync(this.recordingUri);
     if (!info.exists || info.isDirectory) {
       throw new Error('Arquivo de audio inexistente.');
     }
 
-    const base64 = await FileSystem.readAsStringAsync(path, { encoding: 'base64' });
-    if (!base64) {
+    // Ler o arquivo de áudio (AAC/M4A)
+    const base64Audio = await FileSystem.readAsStringAsync(this.recordingUri, { encoding: 'base64' });
+    if (!base64Audio) {
       throw new Error('Falha ao ler audio gravado.');
     }
 
-    const bytes = Buffer.from(base64, 'base64');
-    for (let offset = 0; offset < bytes.byteLength; offset += STREAM_CHUNK_SIZE) {
-      const end = Math.min(offset + STREAM_CHUNK_SIZE, bytes.byteLength);
-      const view = bytes.subarray(offset, end);
-      const base64Chunk = Buffer.from(view).toString('base64');
+    // Converter para bytes brutos
+    const audioBytes = Buffer.from(base64Audio, 'base64');
+    console.log(`[AudioChat] Áudio gravado: ${audioBytes.byteLength} bytes (formato AAC)`);
+
+    // O servidor espera chunks de áudio
+    // Enviar o áudio comprimido em chunks pequenos
+
+    // O servidor vai detectar o formato e decodificar se necessário
+    for (let offset = 0; offset < audioBytes.byteLength; offset += STREAM_CHUNK_SIZE) {
+      const end = Math.min(offset + STREAM_CHUNK_SIZE, audioBytes.byteLength);
+      const chunk = audioBytes.slice(offset, end);
+      
+      // Converter para base64 para envio via SignalR
+      const base64Chunk = chunk.toString('base64');
       subject.next(base64Chunk);
+      
+      // Pequeno delay para garantir processamento no servidor
+      await new Promise(resolve => setTimeout(resolve, 2));
     }
+    
+    console.log('[AudioChat] Stream de áudio concluído');
   }
 
   private async deleteFileSafe(path: string): Promise<void> {
@@ -252,7 +279,22 @@ class AudioChatService {
       encoding: 'base64'
     });
 
-    const { sound } = await Audio.Sound.createAsync({ uri: RESPONSE_FILE });
+    // Configurar modo de áudio para reprodução com qualidade
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+      interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false
+    });
+
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: RESPONSE_FILE },
+      { shouldPlay: false, volume: 1.0, rate: 1.0, progressUpdateIntervalMillis: 100 }
+    );
+    
     sound.setOnPlaybackStatusUpdate((status) => {
       if (!status.isLoaded) {
         return;
