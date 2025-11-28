@@ -30,7 +30,7 @@ type AsyncStorageTarget = {
   remove?(): Promise<void>;
 };
 
-const FIXED_SERVER_HOST = 'https://melissa.alluneed.com.br';
+const FIXED_SERVER_HOST = 'melissa.alluneed.com.br';
 const SETTINGS_FILE_NAME = 'settings.txt';
 const NODE_EXTERNAL_SETTINGS_PATH = 'C:\\dev\\settings.txt';
 const SETTINGS_STORAGE_KEY = 'app-melissa::user-settings';

@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.jbrstates.melissa",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "RECORD_AUDIO"
       ]

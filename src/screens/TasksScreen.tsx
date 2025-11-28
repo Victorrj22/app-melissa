@@ -12,9 +12,10 @@ export interface TasksScreenProps {
   onOpenTask: (task: TaskDto) => void;
   onStartVoice?: () => void;
   onStopVoice?: () => void;
+  isProcessingAudio?: boolean;
 }
 
-const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask, onStartVoice, onStopVoice }) => {
+const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask, onStartVoice, onStopVoice, isProcessingAudio }) => {
   const [allTasks, setAllTasks] = useState<TaskDto[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +155,7 @@ const TasksScreen: React.FC<TasksScreenProps> = ({ onBack, onOpenTask, onStartVo
         onPressHome={onBack}
         onMicrophonePressIn={onStartVoice}
         onMicrophonePressOut={onStopVoice}
+        isProcessingAudio={isProcessingAudio}
       />
     </SafeAreaView>
   );

@@ -23,6 +23,8 @@ const ensureBufferPolyfill = () => {
   }
 };
 
+type ResponseCompleteCallback = () => void;
+
 class AudioChatService {
   private connection: Nullable<HubConnection> = null;
   private connectionPromise: Promise<void> | null = null;
@@ -33,10 +35,19 @@ class AudioChatService {
   private currentAppState: AppStateStatus = AppState.currentState;
   private recordedPCMChunks: Uint8Array[] = [];
   private isRecordingAudio = false;
+  private onResponseComplete: ResponseCompleteCallback | null = null;
 
   constructor() {
     ensureBufferPolyfill();
     AppState.addEventListener('change', this.handleAppStateChange);
+  }
+
+  setOnResponseComplete(callback: ResponseCompleteCallback | null): void {
+    this.onResponseComplete = callback;
+  }
+
+  isAwaitingResponse(): boolean {
+    return this.awaitingResponse;
   }
 
   private handleAppStateChange = (nextState: AppStateStatus) => {
@@ -99,11 +110,13 @@ class AudioChatService {
         void this.playResponse(receivedChunks).finally(() => {
           console.log('[AudioChat] Resposta finalizada, liberando para nova gravação');
           this.awaitingResponse = false;
+          this.onResponseComplete?.();
         });
       },
       error: (err) => {
         console.warn('[AudioChat] Falha ao receber resposta de áudio.', err);
         this.awaitingResponse = false;
+        this.onResponseComplete?.();
       }
     });
   }
@@ -128,11 +141,11 @@ class AudioChatService {
     } finally {
       this.subject.complete();
       this.subject = null;
-      this.awaitingResponse = false;
       this.recordedPCMChunks = [];
-      await this.deleteFileSafe(this.recordingUri);
-      this.recordingUri = null;
-      this.subject = null;
+      if (this.recordingUri) {
+        await this.deleteFileSafe(this.recordingUri);
+        this.recordingUri = null;
+      }
       // Não setar awaitingResponse = false aqui!
       // O callback do stream (complete/error) cuida disso após receber a resposta
       console.log('[AudioChat] stopStreaming finalizado, aguardando resposta do servidor');

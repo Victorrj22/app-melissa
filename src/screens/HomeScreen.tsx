@@ -21,9 +21,10 @@ type HomeScreenProps = {
   onOpenSettings?: () => void;
   onStartVoice?: () => void;
   onStopVoice?: () => void;
+  isProcessingAudio?: boolean;
 };
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks, onOpenSettings, onStartVoice, onStopVoice }) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks, onOpenSettings, onStartVoice, onStopVoice, isProcessingAudio }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const toggleTask = (taskId: string) =>
     setTasks((previous) =>
@@ -231,6 +232,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ onManageTasks, onOpenSettings, 
         onPressTasks={onManageTasks}
         onMicrophonePressIn={onStartVoice}
         onMicrophonePressOut={onStopVoice}
+        isProcessingAudio={isProcessingAudio}
       />
     </SafeAreaView>
   );

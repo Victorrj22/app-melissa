@@ -6,13 +6,26 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { Audio } from 'expo-av';
 import HomeScreen from '@screens/HomeScreen';
 import holidaysService from './src/services/HolidaysService';
 import { theme } from '@theme/index';
 import audioChatService from '@services/AudioChatService';
 
 const App: React.FC = () => {
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+
   useEffect(() => {
+    // Solicitar permissão de áudio ao abrir o app
+    Audio.requestPermissionsAsync().catch((e) => {
+      console.warn('[Audio] Falha ao solicitar permissão:', e);
+    });
+
+    // Registrar callback para quando a resposta de áudio terminar
+    audioChatService.setOnResponseComplete(() => {
+      setIsProcessingAudio(false);
+    });
+
     const now = new Date();
     const isJanFirst = now.getMonth() === 0 && now.getDate() === 1;
     if (isJanFirst) {
@@ -20,6 +33,10 @@ const App: React.FC = () => {
         console.warn('[Holidays] Export failed:', e);
       });
     }
+
+    return () => {
+      audioChatService.setOnResponseComplete(null);
+    };
   }, []);
   const [route, setRoute] = useState<
     | { name: 'home' }
@@ -35,6 +52,7 @@ const App: React.FC = () => {
   const openSettings = () => setRoute({ name: 'settings' });
 
   const startVoice = useCallback(async () => {
+    if (isProcessingAudio) return;
     try {
       await audioChatService.startStreaming();
     } catch (err) {
@@ -42,13 +60,15 @@ const App: React.FC = () => {
       const message = err instanceof Error ? err.message : undefined;
       Alert.alert('Falha', message || 'Não foi possível iniciar a transmissão de áudio.');
     }
-  }, []);
+  }, [isProcessingAudio]);
 
   const stopVoice = useCallback(async () => {
     try {
+      setIsProcessingAudio(true);
       await audioChatService.stopStreaming();
     } catch (err) {
       console.warn('[AudioChat] Falha ao finalizar transmissão.', err);
+      setIsProcessingAudio(false);
     }
   }, []);
 
@@ -61,6 +81,7 @@ const App: React.FC = () => {
             onOpenSettings={openSettings}
             onStartVoice={startVoice}
             onStopVoice={stopVoice}
+            isProcessingAudio={isProcessingAudio}
           />
         )}
         {route.name === 'tasks' && (
@@ -69,6 +90,7 @@ const App: React.FC = () => {
             onOpenTask={openTaskItems}
             onStartVoice={startVoice}
             onStopVoice={stopVoice}
+            isProcessingAudio={isProcessingAudio}
           />
         )}
         {route.name === 'taskItems' && (

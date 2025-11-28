@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { colors } from '@theme/colors';
 import { Feather } from '@expo/vector-icons';
 
@@ -12,6 +12,7 @@ type BottomNavProps = {
   onPressTasks?: () => void;
   onMicrophonePressIn?: () => void;
   onMicrophonePressOut?: () => void;
+  isProcessingAudio?: boolean;
 };
 
 const BottomNav: React.FC<BottomNavProps> = ({
@@ -20,7 +21,8 @@ const BottomNav: React.FC<BottomNavProps> = ({
   onPressMicrophone,
   onPressTasks,
   onMicrophonePressIn,
-  onMicrophonePressOut
+  onMicrophonePressOut,
+  isProcessingAudio = false
 }) => {
   const NavButton = ({
     iconName,
@@ -57,12 +59,17 @@ const BottomNav: React.FC<BottomNavProps> = ({
         onPress={onPressHome}
       />
       <TouchableOpacity
-        style={styles.micButton}
-        onPressIn={onMicrophonePressIn}
-        onPressOut={onMicrophonePressOut}
-        onPress={onPressMicrophone}
+        style={[styles.micButton, isProcessingAudio && styles.micButtonDisabled]}
+        onPressIn={isProcessingAudio ? undefined : onMicrophonePressIn}
+        onPressOut={isProcessingAudio ? undefined : onMicrophonePressOut}
+        onPress={isProcessingAudio ? undefined : onPressMicrophone}
+        disabled={isProcessingAudio}
       >
-        <Feather name="mic" size={28} color={colors.textOnPrimary} />
+        {isProcessingAudio ? (
+          <ActivityIndicator size={28} color={colors.textOnPrimary} />
+        ) : (
+          <Feather name="mic" size={28} color={colors.textOnPrimary} />
+        )}
       </TouchableOpacity>
       <NavButton
         iconName="check-square"
@@ -124,6 +131,9 @@ const styles = StyleSheet.create({
         elevation: 8
       }
     })
+  },
+  micButtonDisabled: {
+    opacity: 0.7
   }
 });
 
